@@ -6,9 +6,11 @@ import json
 from pandas.io.json import json_normalize
 import streamlit as st
 
+filepath = '../../Python Learning/open-data/data/events/3857261.json'
+
 @st.cache_data
 def load_match_data():
-    with open('../../Python Learning/open-data/data/events/3857261.json') as f:
+    with open(filepath) as f:
         wal_eng = json.load(f)
     we = pd.json_normalize(wal_eng, sep='_').assign(match_id="3857261")
     return we
