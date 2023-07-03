@@ -2,26 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from FCPython import createPitch
-import json
-from pandas.io.json import json_normalize
 import streamlit as st
 from MyFCPython import createPitchEdit
-
-# filepath = '../../Python Learning/open-data/data/events/3857261.json'
 
 # Variables used throughout the script
 pitch_width = 120
 pitch_height = 80
-
-# # Helper methods
-# @st.cache_data
-# def load_match_data():
-#     with open(filepath) as f:
-#         wal_eng = json.load(f)
-#     we = pd.json_normalize(wal_eng, sep='_').assign(match_id="3857261")
-#     home_team, away_team = we['team_name'].unique()
-#     print(home_team, away_team)
-#     return we, away_team, home_team
 
 def calc_avg_pos(df, player):
     # Get all the rows for a given player
@@ -41,9 +27,10 @@ def calc_avg_pos(df, player):
     adj_y = 80 - average_y
     return [average_x, adj_y]
 
-st.header('Team analysis')
+st.title('Team analysis')
+st.divider()
 
-we, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
+game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
 
 with st.sidebar:
     team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
@@ -53,8 +40,8 @@ fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
 fig.set_facecolor('black')
 
 if team == 'Both' or team == home_team:
-    bool = (we['team_name'] == home_team) & (we['period'] == 1) & (we['player_name'].notnull()) & (we['location'].notnull())
-    home_actions = we[bool]
+    bool = (game['team_name'] == home_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
+    home_actions = game[bool]
     home_players = home_actions['player_name'].unique()
 
     # Adding the average positions for england (home team)
@@ -69,8 +56,8 @@ if team == 'Both' or team == home_team:
             plt.text(x=avg_x+1.5, y=avg_y+1.5, s=initial, color='white')
 
 if team == 'Both' or team == away_team:
-    bool = (we['team_name'] == away_team) & (we['period'] == 1) & (we['player_name'].notnull()) & (we['location'].notnull())
-    away_actions = we[bool]
+    bool = (game['team_name'] == away_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
+    away_actions = game[bool]
     away_players = away_actions['player_name'].unique()
 
     # Adding the average positions for wales (home team)
@@ -87,14 +74,15 @@ if team == 'Both' or team == away_team:
             initial += letter[0]
             plt.text(x=adj_x+1.5, y=adj_y+1.5, s=initial, color='white')
 
-st.caption('Average Positions')
+st.subheader('Average Positions')
 st.pyplot(fig)
+st.divider()
 
 if team == 'Both' or team == home_team:
     # Calculate heatmap as normal
     heats = np.zeros((121,81), int)
-    bool = (we['team_name'] == home_team) & (we['location'].notnull())
-    player_touches = we[bool]
+    bool = (game['team_name'] == home_team) & (game['location'].notnull())
+    player_touches = game[bool]
 
     for i, touch in player_touches.iterrows():
         x = np.round(touch['location'][0]).astype(int)
@@ -144,15 +132,17 @@ if team == 'Both' or team == home_team:
     plt.imshow(np.transpose(heats), cmap='magma')
     plt.colorbar( fraction=0.03, pad=0.03)
 
-    st.caption(home_team + ' Heatmap')
+    st.subheader(home_team + ' Heatmap')
     st.pyplot(fig)
+    st.caption('Direction of play from left to right')
+    st.divider()
 
 
 if team == 'Both' or team == away_team:
     # Calculate heatmap as normal
     heats = np.zeros((121,81), int)
-    bool = (we['team_name'] == away_team) & (we['location'].notnull())
-    player_touches = we[bool]
+    bool = (game['team_name'] == away_team) & (game['location'].notnull())
+    player_touches = game[bool]
 
     for i, touch in player_touches.iterrows():
         x = pitch_width - np.round(touch['location'][0]).astype(int)
@@ -202,5 +192,53 @@ if team == 'Both' or team == away_team:
     plt.imshow(np.transpose(heats), cmap='magma')
     plt.colorbar(fraction=0.03, pad=0.03)
 
-    st.caption(away_team + ' Heatmap')
+    st.subheader(away_team + ' Heatmap')
     st.pyplot(fig)
+    st.caption('Direction of play from right to left')
+    st.divider()
+
+fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+fig.set_facecolor('black')
+
+shots = game[game.type_name == 'Shot'].set_index('id')
+
+for i, shot in shots.iterrows():
+    x = shot['location'][0]
+    y = shot['location'][1]
+    
+    goal = shot['shot_outcome_name']=='Goal'
+    team_name = shot['team_name'].strip()
+    in_game = shot['period'] != 5
+    
+    circle_size = 2
+    circle_size = np.sqrt(shot['shot_statsbomb_xg'] * 15)
+
+    if team_name == home_team and team != away_team:
+        if goal:
+            shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+            shot_circle.set_alpha(.9)
+            ax.add_patch(shot_circle)
+        else:
+            shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+            shot_circle.set_alpha(.4)
+            ax.add_patch(shot_circle)
+    elif team_name == away_team and team != home_team:
+        if goal:
+            shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
+            shot_circle.set_alpha(.9)
+            ax.add_patch(shot_circle)
+        else:
+            shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
+            shot_circle.set_alpha(.4)
+            ax.add_patch(shot_circle)
+    
+plt.text(5, 75, away_team + ' shots', color='mediumorchid')
+plt.text(80, 75, home_team + ' shots', color='darkorange')
+
+plt.title('England vs Iran at 2022 FIFA World Cup')
+st.subheader('Shot Map')
+fig.set_size_inches(10, 7)
+
+st.pyplot(fig)
+
+st.divider()
