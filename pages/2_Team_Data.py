@@ -7,24 +7,25 @@ from pandas.io.json import json_normalize
 import streamlit as st
 from MyFCPython import createPitchEdit
 
-filepath = '../../Python Learning/open-data/data/events/3857261.json'
+# filepath = '../../Python Learning/open-data/data/events/3857261.json'
 
 # Variables used throughout the script
 pitch_width = 120
 pitch_height = 80
 
-# Helper methods
-@st.cache_data
-def load_match_data():
-    with open(filepath) as f:
-        wal_eng = json.load(f)
-    we = pd.json_normalize(wal_eng, sep='_').assign(match_id="3857261")
-    return we
+# # Helper methods
+# @st.cache_data
+# def load_match_data():
+#     with open(filepath) as f:
+#         wal_eng = json.load(f)
+#     we = pd.json_normalize(wal_eng, sep='_').assign(match_id="3857261")
+#     home_team, away_team = we['team_name'].unique()
+#     print(home_team, away_team)
+#     return we, away_team, home_team
 
 def calc_avg_pos(df, player):
     # Get all the rows for a given player
     locations = df.loc[df['player_name'] == player, ['location', 'player_name']]
-    
     total_x = 0
     total_y = 0
     rows = 0
@@ -34,33 +35,31 @@ def calc_avg_pos(df, player):
         total_x += x
         total_y += y
         rows+=1
-    
     average_x = np.round(total_x / rows, 2)
     average_y = np.round(total_y / rows, 2)
     print(f"{player}: ({average_x}, {average_y})")
     adj_y = 80 - average_y
-    
     return [average_x, adj_y]
 
 st.header('Team analysis')
 
-we = load_match_data()
+we, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
 
 with st.sidebar:
-    team = st.sidebar.radio("Select a team", ('Both', 'Wales', 'England'))
+    team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
 
 # Average positions
 fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
 fig.set_facecolor('black')
 
-if team == 'Both' or team == 'England':
-    bool = (we['team_name'] == 'England') & (we['period'] == 1) & (we['player_name'].notnull()) & (we['location'].notnull())
-    eng_actions = we[bool]
-    eng_players = eng_actions['player_name'].unique()
+if team == 'Both' or team == home_team:
+    bool = (we['team_name'] == home_team) & (we['period'] == 1) & (we['player_name'].notnull()) & (we['location'].notnull())
+    home_actions = we[bool]
+    home_players = home_actions['player_name'].unique()
 
     # Adding the average positions for england (home team)
-    for player in eng_players:
-        avg_x, avg_y = calc_avg_pos(eng_actions, player)
+    for player in home_players:
+        avg_x, avg_y = calc_avg_pos(home_actions, player)
         player_pos = plt.Circle((avg_x, avg_y), 2, facecolor='red', edgecolor='white')
         player_pos.set_alpha(.6)
         ax.add_patch(player_pos)
@@ -69,14 +68,14 @@ if team == 'Both' or team == 'England':
             initial += letter[0]
             plt.text(x=avg_x+1.5, y=avg_y+1.5, s=initial, color='white')
 
-if team == 'Both' or team == 'Wales':
-    bool = (we['team_name'] == 'Wales') & (we['period'] == 1) & (we['player_name'].notnull()) & (we['location'].notnull())
-    wal_actions = we[bool]
-    wal_players = wal_actions['player_name'].unique()
+if team == 'Both' or team == away_team:
+    bool = (we['team_name'] == away_team) & (we['period'] == 1) & (we['player_name'].notnull()) & (we['location'].notnull())
+    away_actions = we[bool]
+    away_players = away_actions['player_name'].unique()
 
     # Adding the average positions for wales (home team)
-    for player in wal_players:
-        avg_x, avg_y = calc_avg_pos(wal_actions, player)
+    for player in away_players:
+        avg_x, avg_y = calc_avg_pos(away_actions, player)
         # Adjust for away team
         adj_x = pitch_width - avg_x
         adj_y = pitch_height - avg_y
@@ -91,10 +90,10 @@ if team == 'Both' or team == 'Wales':
 st.caption('Average Positions')
 st.pyplot(fig)
 
-if team == 'Both' or team == 'England':
+if team == 'Both' or team == home_team:
     # Calculate heatmap as normal
     heats = np.zeros((121,81), int)
-    bool = (we['team_name'] == 'England') & (we['location'].notnull())
+    bool = (we['team_name'] == home_team) & (we['location'].notnull())
     player_touches = we[bool]
 
     for i, touch in player_touches.iterrows():
@@ -145,20 +144,19 @@ if team == 'Both' or team == 'England':
     plt.imshow(np.transpose(heats), cmap='magma')
     plt.colorbar( fraction=0.03, pad=0.03)
 
-    st.caption('England Heatmap')
+    st.caption(home_team + ' Heatmap')
     st.pyplot(fig)
 
 
-if team == 'Both' or team == 'Wales':
+if team == 'Both' or team == away_team:
     # Calculate heatmap as normal
     heats = np.zeros((121,81), int)
-    bool = (we['team_name'] == 'Wales') & (we['location'].notnull())
+    bool = (we['team_name'] == away_team) & (we['location'].notnull())
     player_touches = we[bool]
 
     for i, touch in player_touches.iterrows():
         x = pitch_width - np.round(touch['location'][0]).astype(int)
         y = pitch_height - np.round(touch['location'][1]).astype(int)
-        print(x, y)
         heats[x, y] += 9
     
     # Lines across the pitch
@@ -204,5 +202,5 @@ if team == 'Both' or team == 'Wales':
     plt.imshow(np.transpose(heats), cmap='magma')
     plt.colorbar(fraction=0.03, pad=0.03)
 
-    st.caption('Wales Heatmap')
+    st.caption(away_team + ' Heatmap')
     st.pyplot(fig)
