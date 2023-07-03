@@ -5,6 +5,7 @@ from FCPython import createPitch
 import json
 from pandas.io.json import json_normalize
 import streamlit as st
+from MyFCPython import createPitchEdit
 
 filepath = '../../Python Learning/open-data/data/events/3857261.json'
 
@@ -12,6 +13,7 @@ filepath = '../../Python Learning/open-data/data/events/3857261.json'
 pitch_width = 120
 pitch_height = 80
 
+# Helper methods
 @st.cache_data
 def load_match_data():
     with open(filepath) as f:
@@ -86,4 +88,121 @@ if team == 'Both' or team == 'Wales':
             initial += letter[0]
             plt.text(x=adj_x+1.5, y=adj_y+1.5, s=initial, color='white')
 
+st.caption('Average Positions')
 st.pyplot(fig)
+
+if team == 'Both' or team == 'England':
+    # Calculate heatmap as normal
+    heats = np.zeros((121,81), int)
+    bool = (we['team_name'] == 'England') & (we['location'].notnull())
+    player_touches = we[bool]
+
+    for i, touch in player_touches.iterrows():
+        x = np.round(touch['location'][0]).astype(int)
+        y = np.round(touch['location'][1]).astype(int)
+        heats[x, y] += 9
+    
+    # Lines across the pitch
+    heats[:19, 1:19] = np.sum(heats[:19, 1:19])
+    heats[:19, 19:31] = np.sum(heats[:19, 19:31])
+    heats[:19, 31:51] = np.sum(heats[:19, 31:51])
+    heats[:19, 51:63] = np.sum(heats[:19, 51:63])
+    heats[:19, 63:81] = np.sum(heats[:19, 63:81])
+
+    heats[19:40, 1:19] = np.sum(heats[19:40, 1:19])
+    heats[19:40, 19:31] = np.sum(heats[19:40, 19:31])
+    heats[19:40, 31:51] = np.sum(heats[19:40, 31:51])
+    heats[19:40, 51:63] = np.sum(heats[19:40, 51:63])
+    heats[19:40, 63:81] = np.sum(heats[19:40, 63:81])
+
+    heats[40:61, 1:19] = np.sum(heats[40:61, 1:19])
+    heats[40:61, 19:31] = np.sum(heats[40:61, 19:31])
+    heats[40:61, 31:51] = np.sum(heats[40:61, 31:51])
+    heats[40:61, 51:63] = np.sum(heats[40:61, 51:63])
+    heats[40:61, 63:81] = np.sum(heats[40:61, 63:81])
+
+    heats[61:82, 1:19] = np.sum(heats[61:82, 1:19])
+    heats[61:82, 19:31] = np.sum(heats[61:82, 19:31])
+    heats[61:82, 31:51] = np.sum(heats[61:82, 31:51])
+    heats[61:82, 51:63] = np.sum(heats[61:82, 51:63])
+    heats[61:82, 63:81] = np.sum(heats[61:82, 63:81])
+
+    heats[82:103, 1:19] = np.sum(heats[82:103, 1:19])
+    heats[82:103, 19:31] = np.sum(heats[82:103, 19:31])
+    heats[82:103, 31:51] = np.sum(heats[82:103, 31:51])
+    heats[82:103, 51:63] = np.sum(heats[82:103, 51:63])
+    heats[82:103, 63:81] = np.sum(heats[82:103, 63:81])
+
+    heats[103:121, 1:19] = np.sum(heats[103:121, 1:19])
+    heats[103:121, 19:31] = np.sum(heats[103:121, 19:31])
+    heats[103:121, 31:51] = np.sum(heats[103:121, 31:51])
+    heats[103:121, 51:63] = np.sum(heats[103:121, 51:63])
+    heats[103:121, 63:81] = np.sum(heats[103:121, 63:81])
+
+    fig, ax = createPitchEdit(pitch_width, pitch_height, 'yards', 'gray')
+    fig.set_facecolor('black')
+
+    plt.imshow(np.transpose(heats), cmap='magma')
+    plt.colorbar( fraction=0.03, pad=0.03)
+
+    st.caption('England Heatmap')
+    st.pyplot(fig)
+
+
+if team == 'Both' or team == 'Wales':
+    # Calculate heatmap as normal
+    heats = np.zeros((121,81), int)
+    bool = (we['team_name'] == 'Wales') & (we['location'].notnull())
+    player_touches = we[bool]
+
+    for i, touch in player_touches.iterrows():
+        x = pitch_width - np.round(touch['location'][0]).astype(int)
+        y = pitch_height - np.round(touch['location'][1]).astype(int)
+        print(x, y)
+        heats[x, y] += 9
+    
+    # Lines across the pitch
+    heats[:19, 1:19] = np.sum(heats[:19, 1:19])
+    heats[:19, 19:31] = np.sum(heats[:19, 19:31])
+    heats[:19, 31:51] = np.sum(heats[:19, 31:51])
+    heats[:19, 51:63] = np.sum(heats[:19, 51:63])
+    heats[:19, 63:81] = np.sum(heats[:19, 63:81])
+
+    heats[19:40, 1:19] = np.sum(heats[19:40, 1:19])
+    heats[19:40, 19:31] = np.sum(heats[19:40, 19:31])
+    heats[19:40, 31:51] = np.sum(heats[19:40, 31:51])
+    heats[19:40, 51:63] = np.sum(heats[19:40, 51:63])
+    heats[19:40, 63:81] = np.sum(heats[19:40, 63:81])
+
+    heats[40:61, 1:19] = np.sum(heats[40:61, 1:19])
+    heats[40:61, 19:31] = np.sum(heats[40:61, 19:31])
+    heats[40:61, 31:51] = np.sum(heats[40:61, 31:51])
+    heats[40:61, 51:63] = np.sum(heats[40:61, 51:63])
+    heats[40:61, 63:81] = np.sum(heats[40:61, 63:81])
+
+    heats[61:82, 1:19] = np.sum(heats[61:82, 1:19])
+    heats[61:82, 19:31] = np.sum(heats[61:82, 19:31])
+    heats[61:82, 31:51] = np.sum(heats[61:82, 31:51])
+    heats[61:82, 51:63] = np.sum(heats[61:82, 51:63])
+    heats[61:82, 63:81] = np.sum(heats[61:82, 63:81])
+
+    heats[82:103, 1:19] = np.sum(heats[82:103, 1:19])
+    heats[82:103, 19:31] = np.sum(heats[82:103, 19:31])
+    heats[82:103, 31:51] = np.sum(heats[82:103, 31:51])
+    heats[82:103, 51:63] = np.sum(heats[82:103, 51:63])
+    heats[82:103, 63:81] = np.sum(heats[82:103, 63:81])
+
+    heats[103:120, 1:19] = np.sum(heats[103:120, 1:19])
+    heats[103:120, 19:31] = np.sum(heats[103:120, 19:31])
+    heats[103:120, 31:51] = np.sum(heats[103:120, 31:51])
+    heats[103:120, 51:63] = np.sum(heats[103:120, 51:63])
+    heats[103:120, 63:81] = np.sum(heats[103:120, 63:81])
+
+    fig, ax = createPitchEdit(pitch_width, pitch_height, 'yards', 'gray')
+    fig.set_facecolor('black')
+
+    plt.imshow(np.transpose(heats), cmap='magma')
+    plt.colorbar(fraction=0.03, pad=0.03)
+
+    st.caption('Wales Heatmap')
+    st.pyplot(fig)

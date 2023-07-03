@@ -35,7 +35,7 @@ def createPitchEdit(length,width, unity,linecolor): # in meters
             plt.plot([0,length],[width,width], color=linecolor)
             plt.plot([length,length],[width,0], color=linecolor)
             plt.plot([length,0],[0,0], color=linecolor)
-            plt.plot([length/2,length/2],[0,width], color=linecolor)
+            plt.plot([(length+1.25)/2,(length+1.25)/2],[0,width], color=linecolor)
             
             #Left Penalty Area
             plt.plot([16.5 ,16.5],[(width/2 +16.5),(width/2-16.5)],color=linecolor)
@@ -120,7 +120,7 @@ def createPitchEdit(length,width, unity,linecolor): # in meters
             plt.plot([length-6,length],[(width/2-7.32/2-6),width/2-7.32/2-6],color=linecolor, linewidth=2.5)
             
             #Prepare Circles; 10 yards distance. penalty on 12 yards
-            centreCircle = plt.Circle((length/2,width/2),10,color=linecolor,fill=False)
+            centreCircle = plt.Circle(((length+1.25)/2,(width+1.25)/2),10,color=linecolor,fill=False, linewidth=2.5)
             centreSpot = plt.Circle((length/2,width/2),0.8,color=linecolor)
             leftPenSpot = plt.Circle((12,width/2),0.8,color=linecolor)
             rightPenSpot = plt.Circle((length-12,width/2),0.8,color=linecolor)
@@ -132,8 +132,8 @@ def createPitchEdit(length,width, unity,linecolor): # in meters
             ax.add_patch(rightPenSpot)
             
             #Prepare Arcs
-            leftArc = Arc((11,width/2),height=20,width=20,angle=0,theta1=312,theta2=48,color=linecolor)
-            rightArc = Arc((length-11,width/2),height=20,width=20,angle=0,theta1=130,theta2=230,color=linecolor)
+            leftArc = Arc((11,width/2),height=20,width=20,angle=0,theta1=312,theta2=48,color=linecolor, linewidth=1.5)
+            rightArc = Arc((length-11,width/2),height=20,width=20,angle=0,theta1=130,theta2=230,color=linecolor, linewidth=1.5)
             
             #Draw Arcs
             ax.add_patch(leftArc)
