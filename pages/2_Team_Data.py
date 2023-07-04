@@ -5,6 +5,11 @@ from FCPython import createPitch
 import streamlit as st
 from MyFCPython import createPitchEdit
 
+if 'df' in st.session_state:
+    game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
+else:
+    st.warning('Please return to the home page and select a match')
+
 # Variables used throughout the script
 pitch_width = 120
 pitch_height = 80

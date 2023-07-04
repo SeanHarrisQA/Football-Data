@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import json
 
-# Set the layout as wide(This can only be called once per app)
-# st.set_page_config(layout="wide")
 filepath = '../../Python Learning/open-data/data/'
 
 # Helper methods
@@ -16,38 +14,40 @@ def load_match_data(match_id):
     print(home_team, away_team)
     return match_df, away_team, home_team
 
-all_competitions = pd.read_json(filepath + 'competitions.json')
-
-select_comp = {}
-for i, comp in all_competitions.iterrows():
+@st.cache_data
+def load_competition_data():
+    all_competitions = pd.read_json(filepath + 'competitions.json')
+    select_comp = {}
+    for i, comp in all_competitions.iterrows():
         name = comp['competition_name']
         year = comp['season_name']
         identifier = name + ' ' + year
         select_comp[identifier] = (comp['competition_id'], comp['season_id'])
-        print(identifier)
-        print(select_comp[identifier])
+    return select_comp
+
+def load_event_data(comp_id, season_id):
+    select_game = {}
+    with open(filepath + '/matches/' + str(comp_id) + '/' + str(season_id) + '.json') as f:
+        data = json.load(f)
+        for i in data:
+            scoreline = i['home_team']['home_team_name'] + ' ' + str(i['home_score']) + '-' + str(i['away_score']) + ' ' + i['away_team']['away_team_name']
+            select_game[scoreline] = i['match_id']
+    return select_game
 
 st.title('Statsbomb data analysis')
 
+select_comp = load_competition_data()
 comp_option = st.sidebar.selectbox('Please select a competition', (select_comp.keys()))
-
 comp_id, season_id = select_comp[comp_option]
-print(type(comp_id))
 
-select_game = {}
-with open(filepath + '/matches/' + str(comp_id) + '/' + str(season_id) + '.json') as f:
-    data = json.load(f)
-    for i in data:
-        scoreline = i['home_team']['home_team_name'] + ' ' + str(i['home_score']) + '-' + str(i['away_score']) + ' ' + i['away_team']['away_team_name']
-        select_game[scoreline] = i['match_id']
-
+select_game = load_event_data(comp_id, season_id)
 game_option = st.sidebar.selectbox('Please select a game', (select_game.keys()))
 
 match_id = select_game[game_option]
 
 st.write(match_id)
 
-if st.sidebar.button('Load match'):
+if st.sidebar.button('Load match') or 'df' not in st.session_state:
     st.session_state.df, st.session_state.home, st.session_state.away = load_match_data(match_id)
 
 st.write(st.session_state.home + ' vs ' + st.session_state.away)
