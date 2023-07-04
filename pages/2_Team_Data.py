@@ -5,15 +5,11 @@ from FCPython import createPitch
 import streamlit as st
 from MyFCPython import createPitchEdit
 
-if 'df' in st.session_state:
-    game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
-else:
-    st.warning('Please return to the home page and select a match')
-
 # Variables used throughout the script
 pitch_width = 120
 pitch_height = 80
 
+# Function to calculate the average position of a player from a dataframe
 def calc_avg_pos(df, player):
     # Get all the rows for a given player
     locations = df.loc[df['player_name'] == player, ['location', 'player_name']]
@@ -28,9 +24,68 @@ def calc_avg_pos(df, player):
         rows+=1
     average_x = np.round(total_x / rows, 2)
     average_y = np.round(total_y / rows, 2)
-    print(f"{player}: ({average_x}, {average_y})")
     adj_y = 80 - average_y
     return [average_x, adj_y]
+
+def draw_average_positions():
+    return True
+
+def draw_shotmap():
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig.set_facecolor('black')
+    
+    shots = game[game.type_name == 'Shot'].set_index('id')
+    
+    # Iterate through all the shots of the game, plotting a circle where size of the cirrlce correlates to the xG of the
+    # shot. Shots that resulted in goals are drawn opaque. Different color for each team.
+    for i, shot in shots.iterrows():
+        x = shot['location'][0]
+        y = shot['location'][1]
+    
+        goal = shot['shot_outcome_name']=='Goal'
+        team_name = shot['team_name'].strip()
+    
+        circle_size = 2
+        circle_size = np.sqrt(shot['shot_statsbomb_xg'] * 15)
+
+        if team_name == home_team and team != away_team:
+            if goal:
+                shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+                shot_circle.set_alpha(.9)
+                ax.add_patch(shot_circle)
+            else:
+                shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+                shot_circle.set_alpha(.4)
+                ax.add_patch(shot_circle)
+        elif team_name == away_team and team != home_team:
+            if goal:
+                shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
+                shot_circle.set_alpha(.9)
+                ax.add_patch(shot_circle)
+            else:
+                shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
+                shot_circle.set_alpha(.4)
+                ax.add_patch(shot_circle)
+
+    # Annotate the shotmaps
+    if team == 'Both' or team == home_team:
+        plt.text(80, 75, home_team + ' shots', color='darkorange')
+    if team == 'Both' or team == away_team:
+        plt.text(5, 75, away_team + ' shots', color='mediumorchid')
+    
+    # Draw the shotmaps
+    st.subheader('Shot Map')
+    fig.set_size_inches(10, 7)
+    st.pyplot(fig)
+    st.divider()
+    
+    return True
+
+# If there hasn't been a game selected then warn the user they need to select a game from the home page
+if 'df' in st.session_state:
+    game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
+else:
+    st.warning('Please return to the home page and select a match')
 
 # Main code
 st.title('Team analysis')
@@ -38,8 +93,7 @@ st.divider()
 
 game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
 
-with st.sidebar:
-    team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
+team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
 
 # Average positions
 fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
@@ -50,7 +104,6 @@ if team == 'Both' or team == home_team:
     home_actions = game[bool]
     home_players = home_actions['player_name'].unique()
 
-    # Adding the average positions for england (home team)
     for player in home_players:
         avg_x, avg_y = calc_avg_pos(home_actions, player)
         player_pos = plt.Circle((avg_x, avg_y), 2, facecolor='red', edgecolor='white')
@@ -66,7 +119,6 @@ if team == 'Both' or team == away_team:
     away_actions = game[bool]
     away_players = away_actions['player_name'].unique()
 
-    # Adding the average positions for wales (home team)
     for player in away_players:
         avg_x, avg_y = calc_avg_pos(away_actions, player)
         # Adjust for away team
@@ -203,46 +255,4 @@ if team == 'Both' or team == away_team:
     st.caption('Direction of play from right to left')
     st.divider()
 
-fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-fig.set_facecolor('black')
-
-shots = game[game.type_name == 'Shot'].set_index('id')
-
-for i, shot in shots.iterrows():
-    x = shot['location'][0]
-    y = shot['location'][1]
-    
-    goal = shot['shot_outcome_name']=='Goal'
-    team_name = shot['team_name'].strip()
-    in_game = shot['period'] != 5
-    
-    circle_size = 2
-    circle_size = np.sqrt(shot['shot_statsbomb_xg'] * 15)
-
-    if team_name == home_team and team != away_team:
-        if goal:
-            shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
-            shot_circle.set_alpha(.9)
-            ax.add_patch(shot_circle)
-        else:
-            shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
-            shot_circle.set_alpha(.4)
-            ax.add_patch(shot_circle)
-    elif team_name == away_team and team != home_team:
-        if goal:
-            shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
-            shot_circle.set_alpha(.9)
-            ax.add_patch(shot_circle)
-        else:
-            shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
-            shot_circle.set_alpha(.4)
-            ax.add_patch(shot_circle)
-    
-plt.text(5, 75, away_team + ' shots', color='mediumorchid')
-plt.text(80, 75, home_team + ' shots', color='darkorange')
-st.subheader('Shot Map')
-fig.set_size_inches(10, 7)
-
-st.pyplot(fig)
-
-st.divider()
+draw_shotmap()

@@ -42,14 +42,10 @@ comp_id, season_id = select_comp[comp_option]
 
 select_game = load_event_data(comp_id, season_id)
 game_option = st.sidebar.selectbox('Please select a game', (select_game.keys()))
-
 match_id = select_game[game_option]
-
-st.write(match_id)
 
 if st.sidebar.button('Load match') or 'df' not in st.session_state:
     st.session_state.df, st.session_state.home, st.session_state.away = load_match_data(match_id)
-
 st.write(st.session_state.home + ' vs ' + st.session_state.away)
 
 st.dataframe(st.session_state.df)
