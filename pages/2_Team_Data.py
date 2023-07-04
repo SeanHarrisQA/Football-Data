@@ -28,6 +28,45 @@ def calc_avg_pos(df, player):
     return [average_x, adj_y]
 
 def draw_average_positions():
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig.set_facecolor('black')
+
+    if team == 'Both' or team == home_team:
+        bool = (game['team_name'] == home_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
+        home_actions = game[bool]
+        home_players = home_actions['player_name'].unique()
+
+        for player in home_players:
+            avg_x, avg_y = calc_avg_pos(home_actions, player)
+            player_pos = plt.Circle((avg_x, avg_y), 2, facecolor='red', edgecolor='white')
+            player_pos.set_alpha(.6)
+            ax.add_patch(player_pos)
+            initial = ''
+            for letter in player.split(' '):
+                initial += letter[0]
+                plt.text(x=avg_x+1.5, y=avg_y+1.5, s=initial, color='white')
+
+    if team == 'Both' or team == away_team:
+        bool = (game['team_name'] == away_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
+        away_actions = game[bool]
+        away_players = away_actions['player_name'].unique()
+
+        for player in away_players:
+            avg_x, avg_y = calc_avg_pos(away_actions, player)
+            # Adjust for away team
+            adj_x = pitch_width - avg_x
+            adj_y = pitch_height - avg_y
+            player_pos = plt.Circle((adj_x, adj_y), 2, facecolor='blue', edgecolor='white')
+            player_pos.set_alpha(.6)
+            ax.add_patch(player_pos)
+            initial = ''
+            for letter in player.split(' '):
+                initial += letter[0]
+                plt.text(x=adj_x+1.5, y=adj_y+1.5, s=initial, color='white')
+
+    st.subheader('Average Positions')
+    st.pyplot(fig)
+    st.divider()
     return True
 
 def draw_shotmap():
@@ -78,7 +117,6 @@ def draw_shotmap():
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
     st.divider()
-    
     return True
 
 # If there hasn't been a game selected then warn the user they need to select a game from the home page
@@ -94,47 +132,6 @@ st.divider()
 game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
 
 team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
-
-# Average positions
-fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-fig.set_facecolor('black')
-
-if team == 'Both' or team == home_team:
-    bool = (game['team_name'] == home_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
-    home_actions = game[bool]
-    home_players = home_actions['player_name'].unique()
-
-    for player in home_players:
-        avg_x, avg_y = calc_avg_pos(home_actions, player)
-        player_pos = plt.Circle((avg_x, avg_y), 2, facecolor='red', edgecolor='white')
-        player_pos.set_alpha(.6)
-        ax.add_patch(player_pos)
-        initial = ''
-        for letter in player.split(' '):
-            initial += letter[0]
-            plt.text(x=avg_x+1.5, y=avg_y+1.5, s=initial, color='white')
-
-if team == 'Both' or team == away_team:
-    bool = (game['team_name'] == away_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
-    away_actions = game[bool]
-    away_players = away_actions['player_name'].unique()
-
-    for player in away_players:
-        avg_x, avg_y = calc_avg_pos(away_actions, player)
-        # Adjust for away team
-        adj_x = pitch_width - avg_x
-        adj_y = pitch_height - avg_y
-        player_pos = plt.Circle((adj_x, adj_y), 2, facecolor='blue', edgecolor='white')
-        player_pos.set_alpha(.6)
-        ax.add_patch(player_pos)
-        initial = ''
-        for letter in player.split(' '):
-            initial += letter[0]
-            plt.text(x=adj_x+1.5, y=adj_y+1.5, s=initial, color='white')
-
-st.subheader('Average Positions')
-st.pyplot(fig)
-st.divider()
 
 if team == 'Both' or team == home_team:
     # Calculate heatmap as normal
