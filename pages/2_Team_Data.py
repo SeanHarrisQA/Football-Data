@@ -27,6 +27,7 @@ def calc_avg_pos(df, player):
     adj_y = 80 - average_y
     return [average_x, adj_y]
 
+# Main code
 st.title('Team analysis')
 st.divider()
 
@@ -234,8 +235,6 @@ for i, shot in shots.iterrows():
     
 plt.text(5, 75, away_team + ' shots', color='mediumorchid')
 plt.text(80, 75, home_team + ' shots', color='darkorange')
-
-plt.title('England vs Iran at 2022 FIFA World Cup')
 st.subheader('Shot Map')
 fig.set_size_inches(10, 7)
 

@@ -29,7 +29,7 @@ for i, comp in all_competitions.iterrows():
 
 st.title('Statsbomb data analysis')
 
-comp_option = st.selectbox('Please select a competition', (select_comp.keys()))
+comp_option = st.sidebar.selectbox('Please select a competition', (select_comp.keys()))
 
 comp_id, season_id = select_comp[comp_option]
 print(type(comp_id))
@@ -41,19 +41,15 @@ with open(filepath + '/matches/' + str(comp_id) + '/' + str(season_id) + '.json'
         scoreline = i['home_team']['home_team_name'] + ' ' + str(i['home_score']) + '-' + str(i['away_score']) + ' ' + i['away_team']['away_team_name']
         select_game[scoreline] = i['match_id']
 
-game_option = st.selectbox('Please select a game', (select_game.keys()))
+game_option = st.sidebar.selectbox('Please select a game', (select_game.keys()))
 
 match_id = select_game[game_option]
 
 st.write(match_id)
 
-match_df, away_team, home_team = load_match_data(match_id)
+if st.sidebar.button('Load match'):
+    st.session_state.df, st.session_state.home, st.session_state.away = load_match_data(match_id)
 
-st.write(away_team + ' vs ' + home_team)
-st.session_state.df = match_df
-st.session_state.home = home_team
-st.session_state.away = away_team
+st.write(st.session_state.home + ' vs ' + st.session_state.away)
 
 st.dataframe(st.session_state.df)
-
-
