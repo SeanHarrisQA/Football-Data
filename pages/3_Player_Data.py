@@ -5,7 +5,7 @@ from FCPython import createPitch
 import streamlit as st
 import math
 
-@st.cache_data(max_entries=50)
+@st.cache_data(max_entries=20)
 def draw_passmap(game, player):
     # Pass map for given player
     st.subheader('Pass Map')
@@ -43,7 +43,7 @@ def draw_passmap(game, player):
     st.caption('Direction of play from left to right')
     st.divider()
 
-@st.cache_data(max_entries=50)
+@st.cache_data(max_entries=20)
 def draw_heatmap(game, player):
     # Heatmap for a given player
     st.subheader('Heat Map')

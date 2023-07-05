@@ -247,6 +247,7 @@ def draw_heatmaps(game, team, home_team, away_team):
 # If there hasn't been a game selected then warn the user they need to select a game from the home page
 if 'df' in st.session_state:
     game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
+    lineup_0, lineup_1 = st.session_state.lineups
 else:
     st.warning('Please return to the home page and select a match')
 
