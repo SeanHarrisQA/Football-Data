@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from FCPython import createPitch
 import streamlit as st
+import math
 
 @st.cache_data(max_entries=50)
 def draw_passmap(game, player):
@@ -10,21 +11,34 @@ def draw_passmap(game, player):
     st.subheader('Pass Map')
     # Select rows all the rows where the given player makes a pass
     bool = (game['player_name'] == player) & (game['type_name'] == 'Pass')
-    passes_1st = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name']]
+
+    # Counter to monitor pass success rate
+    successful_passes = 0
+
+    passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
     # Create plot
-    fig = createPitch(pitch_width, pitch_height, 'yards', 'white') # ax
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
     fig.set_facecolor('black')
     # Plot the passes
-    for a_pass in passes_1st.iterrows():
+    for a_pass in passes.iterrows():
         #length = a_pass[1][0]
         #angle = a_pass[1][1]
+        complete = math.isnan(a_pass[1][6]) or a_pass[1][6] == 76
         x_end = a_pass[1][2][0] 
         y_end = pitch_height-a_pass[1][2][1]
         x_start = a_pass[1][3][0]
         y_start = pitch_height-a_pass[1][3][1]
-        plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='mediumorchid', head_width=1.5, head_length=2, length_includes_head=True)
+        if complete:
+            successful_passes+=1
+            plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='mediumorchid', head_width=1.5, head_length=2, length_includes_head=True)
+        else:
+            plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='darkorange', head_width=1.5, head_length=2, length_includes_head=True)
     # Show the plot on the page
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+    pass_success_rate = round((successful_passes / len(passes)) * 100)
+    st.write(str(pass_success_rate) + '% Successful')
+    plt.text(2, 76, 'Successful', color='mediumorchid')
+    plt.text(100, 76, 'Unsuccessful', color='darkorange')
     st.pyplot(fig)
     st.caption('Direction of play from left to right')
     st.divider()
@@ -53,7 +67,7 @@ def draw_heatmap(game, player):
         heats[x-1:x+2, y-1:y+2] +=1
         heats[x,y] +=1
     # Plot heatmap
-    fig = createPitch(pitch_width, pitch_height, 'yards', 'white')
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
     fig.set_facecolor('black')
     plt.imshow(np.transpose(heats), cmap='magma')
     st.pyplot(fig)
