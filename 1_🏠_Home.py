@@ -37,23 +37,12 @@ def load_event_data(comp_id, season_id):
 @st.cache_data
 def load_lineup_data(match_id):
     lineup = []
-    # pd.read_json(filepath + '/lineups/' + str(match_id) + '.json')
     with open(filepath + '/lineups/' + str(match_id) + '.json') as f:
          game = json.load(f)
          for x in game:
              temp = pd.json_normalize(x)
              tdf = pd.json_normalize(temp['lineup'][0], sep='_')
              lineup.append(tdf)
-             #st.dataframe(tdf)
-            #  for y in temp['lineup'][0]:
-            #      print(y)
-            #      tdf = pd.json_normalize(y, sep='_')
-                 #st.dataframe(tdf)
-             #temp_lineup = temp['lineup'][0][0]['player_name']
-             #print("temp['lineup'][0]['player_name']")
-             #print(temp_lineup)
-    #lineup_df = pd.json_normalize(game, sep='_').assign(match_id=match_id)
-    #print(type(lineup_df))
     return lineup
 
 
@@ -74,4 +63,5 @@ if st.sidebar.button('Load match') or 'df' not in st.session_state:
         st.dataframe(lineup)
 st.write(st.session_state.home + ' vs ' + st.session_state.away)
 
+st.subheader('More match data to go here')
 st.dataframe(st.session_state.df)
