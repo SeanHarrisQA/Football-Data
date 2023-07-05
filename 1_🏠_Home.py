@@ -45,7 +45,6 @@ def load_lineup_data(match_id):
              lineup.append(tdf)
     return lineup
 
-
 st.title('Statsbomb data analysis')
 
 select_comp = load_competition_data()
@@ -59,9 +58,9 @@ match_id = select_game[game_option]
 if st.sidebar.button('Load match') or 'df' not in st.session_state:
     st.session_state.df, st.session_state.home, st.session_state.away = load_match_data(match_id)
     st.session_state.lineups = load_lineup_data(match_id)
-    for lineup in st.session_state.lineups:
-        st.dataframe(lineup)
+    
 st.write(st.session_state.home + ' vs ' + st.session_state.away)
-
+for lineup in st.session_state.lineups:
+    st.dataframe(lineup)
 st.subheader('More match data to go here')
 st.dataframe(st.session_state.df)
