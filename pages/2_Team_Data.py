@@ -27,7 +27,8 @@ def calc_avg_pos(df, player):
     adj_y = 80 - average_y
     return [average_x, adj_y]
 
-def draw_average_positions():
+@st.cache_data(max_entries=3)
+def draw_average_positions(game, team, home_team, away_team):
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
     fig.set_facecolor('black')
 
@@ -69,7 +70,8 @@ def draw_average_positions():
     st.divider()
     return True
 
-def draw_shotmap():
+@st.cache_data(max_entries=3)
+def draw_shotmap(game, team, home_team, away_team):
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
     fig.set_facecolor('black')
     
@@ -119,7 +121,8 @@ def draw_shotmap():
     st.divider()
     return True
 
-def draw_heatmaps():
+@st.cache_data(max_entries=3)
+def draw_heatmaps(game, team, home_team, away_team):
     if team == 'Both' or team == home_team:
         # Calculate heatmap as normal
         heats = np.zeros((121,81), int)
@@ -252,8 +255,8 @@ st.title('Team analysis')
 st.divider()
 game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
 
-team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
+selected_team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
 
-draw_average_positions()
-draw_heatmaps()
-draw_shotmap()
+draw_average_positions(game, selected_team, home_team, away_team)
+draw_heatmaps(game, selected_team, home_team, away_team)
+draw_shotmap(game, selected_team, home_team, away_team)
