@@ -270,7 +270,7 @@ with st.expander("See teams"):
                 initial = ''
                 for letter in player['player_name'].split(' '):
                     initial += letter[0]
-                st.caption(player['player_name'] + ', ' + initial)
+                st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
 
     with col2:
         st.subheader('Away')
@@ -279,7 +279,7 @@ with st.expander("See teams"):
                 initial = ''
                 for letter in player['player_name'].split(' '):
                     initial += letter[0]
-                st.caption(player['player_name'] + ', ' + initial)
+                st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
 
 draw_average_positions(game, selected_team, home_team, away_team)
 draw_heatmaps(game, selected_team, home_team, away_team)
