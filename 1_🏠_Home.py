@@ -31,7 +31,10 @@ def load_event_data(comp_id, season_id):
         data = json.load(f)
         for i in data:
             scoreline = i['home_team']['home_team_name'] + ' ' + str(i['home_score']) + '-' + str(i['away_score']) + ' ' + i['away_team']['away_team_name']
-            select_game[scoreline] = i['match_id']
+            select_game[scoreline] = { "id" : i['match_id'],
+                                      "home" : i['home_team']['home_team_name'],
+                                      "away" : i['away_team']['away_team_name']
+                                      }
     return select_game
 
 @st.cache_data
@@ -53,10 +56,14 @@ comp_id, season_id = select_comp[comp_option]
 
 select_game = load_event_data(comp_id, season_id)
 game_option = st.sidebar.selectbox('Please select a game', (select_game.keys()))
-match_id = select_game[game_option]
+match_id = select_game[game_option]['id']
+home = select_game[game_option]['home']
+away = select_game[game_option]['away']
 
 if st.sidebar.button('Load match') or 'df' not in st.session_state:
     st.session_state.df, st.session_state.home, st.session_state.away = load_match_data(match_id)
+    st.session_state.home = home
+    st.session_state.away = away
     st.session_state.lineups = load_lineup_data(match_id)
     
 st.subheader('More match data to go here')
