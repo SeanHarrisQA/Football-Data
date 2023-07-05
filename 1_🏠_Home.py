@@ -10,8 +10,7 @@ def load_match_data(match_id):
     with open(filepath + '/events/' + str(match_id) + '.json') as f:
          game = json.load(f)
     match_df = pd.json_normalize(game, sep='_').assign(match_id=match_id)
-    home_team, away_team = match_df['team_name'].unique()
-    return match_df, away_team, home_team
+    return match_df
 
 @st.cache_data
 def load_competition_data():
@@ -61,7 +60,7 @@ home = select_game[game_option]['home']
 away = select_game[game_option]['away']
 
 if st.sidebar.button('Load match') or 'df' not in st.session_state:
-    st.session_state.df, st.session_state.home, st.session_state.away = load_match_data(match_id)
+    st.session_state.df = load_match_data(match_id)
     st.session_state.home = home
     st.session_state.away = away
     st.session_state.lineups = load_lineup_data(match_id)

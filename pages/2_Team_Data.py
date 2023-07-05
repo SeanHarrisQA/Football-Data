@@ -281,6 +281,7 @@ with st.expander("See teams"):
                     initial += letter[0]
                 st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
 
-draw_average_positions(game, selected_team, home_team, away_team)
+with st.expander("See average positions", expanded=True):
+    draw_average_positions(game, selected_team, home_team, away_team)
 draw_heatmaps(game, selected_team, home_team, away_team)
 draw_shotmap(game, selected_team, home_team, away_team)
