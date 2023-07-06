@@ -6,12 +6,12 @@ import streamlit as st
 import math
 
 @st.cache_data(max_entries=20)
-def draw_passmap(game, player):
+def draw_passmap(game, player, values):
     # Pass map for given player
     st.subheader('Pass Map')
+    mn, mx = values
     # Select rows all the rows where the given player makes a pass
-    bool = (game['player_name'] == player) & (game['type_name'] == 'Pass')
-
+    bool = (game['player_name'] == player) & (game['type_name'] == 'Pass') & (game['minute'] >= mn) & (game['minute'] <= mx)
     # Counter to monitor pass success rate
     successful_passes = 0
 
@@ -94,5 +94,10 @@ st.subheader(selected_player)
 st.write(st.session_state.home + ' vs ' + st.session_state.away)
 st.divider()
 
-draw_passmap(game, selected_player)
+values = st.slider(
+    'Select a range of values',
+    0, 100, (0, 100))
+st.write('Values:', values)
+
+draw_passmap(game, selected_player, values)
 draw_heatmap(game, selected_player)

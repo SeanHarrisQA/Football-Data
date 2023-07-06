@@ -260,7 +260,7 @@ game, home_team, away_team = st.session_state.df, st.session_state.home, st.sess
 selected_team = st.sidebar.radio("Select a team", ('Both', home_team, away_team))
 
 # Expander to make viewing the teamsheets optional
-with st.expander("See teams"):
+with st.expander("**See teams**"):
     # Set up two columns to print the team sheets
     col1, col2 = st.columns(2)
     with col1:
@@ -281,7 +281,7 @@ with st.expander("See teams"):
                     initial += letter[0]
                 st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
 
-with st.expander("See average positions", expanded=True):
+with st.expander("**See average positions**", expanded=True):
     draw_average_positions(game, selected_team, home_team, away_team)
 draw_heatmaps(game, selected_team, home_team, away_team)
 draw_shotmap(game, selected_team, home_team, away_team)
