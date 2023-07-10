@@ -144,7 +144,6 @@ def createPitch(length,width, unity,linecolor): # in meters
     
     return fig,ax
 
-
 def createPitchOld():
     #Taken from FC Python        
     #Create figure

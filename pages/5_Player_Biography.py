@@ -6,28 +6,6 @@ import json
 from FCPython import createPitch
 import matplotlib.pyplot as plt
 from MyFCPython import createHalf
-import time
-
-# Set layout wide, this always needs to be the first call you make to streamlit after importing
-# st.set_page_config(layout="wide")
-st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
-
-st.title('Player Biography')
-
-filepath = '../../Python Learning/open-data/data/'
-pitch_width = 120
-pitch_height = 80
-
-player_id = 5503
 
 def load_competitions(local):
     if local:
@@ -86,9 +64,13 @@ def draw_shotmap_half_pitch(shots):
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
     fig.patch.set_alpha(0)
 
+    total_distance = 0
+
     for i, shot in shots.iterrows():
         prev_x = shot['location'][0]
         prev_y = shot['location'][1]
+
+        total_distance += (120 - prev_x)
 
         x = prev_y
         y = 60 - (120 - prev_x)
@@ -106,10 +88,36 @@ def draw_shotmap_half_pitch(shots):
             shot_circle.set_alpha(.4)
             ax.add_patch(shot_circle)
 
+    average_distance = np.round(total_distance / len(season_shots), 2)
+    # st.write("Average distance " +str(average_distance))
+    plt.plot([9,9], [60, 60-average_distance], color='gray')
+    plt.text(9, 60-average_distance-6, 'Average\ndistance\n' + str(average_distance) + ' yards', horizontalalignment='center',verticalalignment='center', color='grey')
+
     # Draw the shotmaps
     st.subheader('Shot Map')
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
+
+# Set layout wide, this always needs to be the first call you make to streamlit after importing
+# st.set_page_config(layout="wide")
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 1rem;
+                    padding-bottom: 0rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
+
+st.title('Player Biography')
+
+filepath = '../../Python Learning/open-data/data/'
+pitch_width = 120
+pitch_height = 80
+
+player_id = 5503
 
 # main script
 all_competitions = load_competitions(True)
