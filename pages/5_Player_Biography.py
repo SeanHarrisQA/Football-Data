@@ -6,10 +6,21 @@ import json
 from FCPython import createPitch
 import matplotlib.pyplot as plt
 from MyFCPython import createHalf
-from itertools import product
+import time
 
 # Set layout wide, this always needs to be the first call you make to streamlit after importing
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 1rem;
+                    padding-bottom: 0rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
+
 st.title('Player Biography')
 
 filepath = '../../Python Learning/open-data/data/'
@@ -73,7 +84,8 @@ def draw_shotmap(shots):
 
 def draw_shotmap_half_pitch(shots):
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
-    fig.set_facecolor('black')
+    fig.patch.set_facecolor('black')
+    fig.patch.set_alpha(0)
 
     for i, shot in shots.iterrows():
         prev_x = shot['location'][0]
@@ -99,7 +111,6 @@ def draw_shotmap_half_pitch(shots):
     st.subheader('Shot Map')
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
-    st.divider()
 
 # main script
 all_competitions = load_competitions(True)
@@ -134,13 +145,11 @@ for i, match in all_matches.iterrows():
 
 my_bar.progress(100, text='Data successfully loaded')
 
-st.title("Lionel Messi non-penalty shots " + str(season))
+st.subheader("Lionel Messi non-penalty shots " + str(season))
 
 my_bar.progress(100, text='Data successfully loaded')
 
-st.dataframe(season_shots)
-
-col1, col2 = st.columns([3, 1])
+col1, col2 = st.columns([3, 2])
 
 with col1:
     draw_shotmap_half_pitch(season_shots)
@@ -151,14 +160,17 @@ with col2:
     xG = np.around(season_shots['shot_statsbomb_xg'].sum(), 2)
     xG_per_shot = np.around((xG / shots), 3)
     st.subheader('Stats')
-    st.write("Shots: " + str(shots))
-    st.write("Goals: " + str(goals))
-    st.write("xG: " + str(xG))
-    st.write("xG per shot: " + str(xG_per_shot))
+    colA, colB = st.columns(2)
+    with colA:
+        st.write("Shots: " + str(shots))
+        st.write("Goals: " + str(goals))
+    with colB:
+        st.write("xG: " + str(xG))
+        st.write("xG per shot: " + str(xG_per_shot))
 
     # Tally shots for each time
     piechart_values = season_shots['shot_body_part_name'].value_counts()
-    st.write(piechart_values)
+    #st.write(piechart_values)
     inner_values = []
     for body_part in piechart_values.index:
         bool = (season_shots['shot_body_part_name'] == body_part) & (season_shots['shot_outcome_name'] == 'Goal')
@@ -175,12 +187,17 @@ with col2:
     cmap = plt.get_cmap("tab20c")
     colours = cmap(np.array([4, 12, 0, 16]))
     inner_colours = cmap(np.array([5, 6, 13, 14, 1, 2, 17, 18]))
+    test = ["Missed", "Scored", "Missed", "Scored", "Missed", "Scored", "Missed", "Scored"]
     o_patches, o_texts, o_autotexts = ax1.pie(piechart_values, labels=piechart_values.index, colors=colours, autopct='%1.1f%%', wedgeprops=dict(width=size, edgecolor='w'))
-    something = ax1.pie(inner_values, radius=1-size, colors=inner_colours, wedgeprops=dict(width=size, edgecolor='w'))
+    something, qualcosa = ax1.pie(inner_values, radius=1-size, colors=inner_colours, wedgeprops=dict(width=size, edgecolor='w'))
+    legend = ax1.legend(something, test, title="Inner Ring",loc="center left", bbox_to_anchor=(1, 0, 0.5, 1), framealpha=0, labelcolor='w')
+    plt.setp(legend.get_title(), color='w')
     for text in o_texts:
         text.set_color('darkorange')
     for autotext in o_autotexts:
         autotext.set_color('white')
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
+
+my_bar.empty()
 
