@@ -30,7 +30,7 @@ def calc_avg_pos(df, player):
 @st.cache_data(max_entries=3)
 def draw_average_positions(game, team, home_team, away_team):
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    fig.set_facecolor('black')
+    fig.patch.set_alpha(0)
 
     if team == 'Both' or team == home_team:
         bool = (game['team_name'] == home_team) & (game['period'] == 1) & (game['player_name'].notnull()) & (game['location'].notnull())
@@ -73,7 +73,7 @@ def draw_average_positions(game, team, home_team, away_team):
 @st.cache_data(max_entries=3)
 def draw_shotmap(game, team, home_team, away_team):
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    fig.set_facecolor('black')
+    fig.patch.set_alpha(0)
     
     shots = game[game.type_name == 'Shot'].set_index('id')
     
@@ -172,7 +172,7 @@ def draw_heatmaps(game, team, home_team, away_team):
         heats[103:121, 63:81] = np.sum(heats[103:121, 63:81])
 
         fig, ax = createPitchEdit(pitch_width, pitch_height, 'yards', 'gray')
-        fig.set_facecolor('black')
+        fig.patch.set_alpha(0)
 
         plt.imshow(np.transpose(heats), cmap='magma')
         plt.colorbar( fraction=0.03, pad=0.03)
@@ -233,7 +233,7 @@ def draw_heatmaps(game, team, home_team, away_team):
         heats[103:121, 63:81] = np.sum(heats[103:121, 63:81])
 
         fig, ax = createPitchEdit(pitch_width, pitch_height, 'yards', 'gray')
-        fig.set_facecolor('black')
+        fig.patch.set_alpha(0)
 
         plt.imshow(np.transpose(heats), cmap='magma')
         plt.colorbar( fraction=0.03, pad=0.03)
@@ -281,7 +281,7 @@ with st.expander("**See teams**"):
                     initial += letter[0]
                 st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
 
-with st.expander("**See average positions**", expanded=True):
-    draw_average_positions(game, selected_team, home_team, away_team)
+
+draw_average_positions(game, selected_team, home_team, away_team)
 draw_heatmaps(game, selected_team, home_team, away_team)
 draw_shotmap(game, selected_team, home_team, away_team)

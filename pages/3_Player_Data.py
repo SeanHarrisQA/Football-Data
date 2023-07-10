@@ -18,7 +18,7 @@ def draw_passmap(game, player, values):
     passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
     # Create plot
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
-    fig.set_facecolor('black')
+    fig.patch.set_alpha(0)
     # Plot the passes
     for a_pass in passes.iterrows():
         #length = a_pass[1][0]
@@ -68,8 +68,8 @@ def draw_heatmap(game, player):
         heats[x,y] +=1
     # Plot heatmap
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
-    fig.set_facecolor('black')
     plt.imshow(np.transpose(heats), cmap='magma')
+    fig.patch.set_alpha(0)
     st.pyplot(fig)
     st.caption('Direction of play from left to right')
     st.divider()

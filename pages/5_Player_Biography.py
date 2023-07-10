@@ -84,7 +84,6 @@ def draw_shotmap(shots):
 
 def draw_shotmap_half_pitch(shots):
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
-    fig.patch.set_facecolor('black')
     fig.patch.set_alpha(0)
 
     for i, shot in shots.iterrows():
@@ -182,7 +181,6 @@ with col2:
     # Pie chart, where the slices will be ordered and plotted counter-clockwise:
     size = 0.3
     fig1, ax1 = plt.subplots()
-    fig1.patch.set_facecolor('black')
     fig1.patch.set_alpha(0)
     cmap = plt.get_cmap("tab20c")
     colours = cmap(np.array([4, 12, 0, 16]))
