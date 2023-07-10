@@ -91,7 +91,7 @@ st.title('Player analysis')
 
 # Start of page
 st.subheader(selected_player)
-st.write(st.session_state.home + ' vs ' + st.session_state.away)
+st.write(st.session_state.scoreline)
 st.divider()
 
 values = st.slider(

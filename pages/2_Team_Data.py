@@ -253,7 +253,7 @@ else:
 
 # Main code
 st.title('Team analysis')
-st.write(st.session_state.home + ' vs ' + st.session_state.away)
+st.write(st.session_state.scoreline)
 st.divider()
 game, home_team, away_team = st.session_state.df, st.session_state.home, st.session_state.away
 

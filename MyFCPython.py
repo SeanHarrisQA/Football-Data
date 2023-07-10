@@ -144,107 +144,43 @@ def createPitchEdit(length,width, unity,linecolor): # in meters
     
     return fig,ax
 
-
-def createPitchOld():
-    #Taken from FC Python        
-    #Create figure
+def createHalf(length,width, unity,linecolor):
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
+    max_x = width
+    max_y = length / 2
 
-    #Pitch Outline & Centre Line
-    plt.plot([0,0],[0,90], color=linecolor)
-    plt.plot([0,130],[90,90], color=linecolor)
-    plt.plot([130,130],[90,0], color=linecolor)
-    plt.plot([130,0],[0,0], color=linecolor)
-    plt.plot([65,65],[0,90], color=linecolor)
-    
-    #Left Penalty Area
-    plt.plot([16.5,16.5],[65,25],color=linecolor)
-    plt.plot([0,16.5],[65,65],color=linecolor)
-    plt.plot([16.5,0],[25,25],color=linecolor)
-    
-    #Right Penalty Area
-    plt.plot([130,113.5],[65,65],color=linecolor)
-    plt.plot([113.5,113.5],[65,25],color=linecolor)
-    plt.plot([113.5,130],[25,25],color=linecolor)
-    
-    #Left 6-yard Box
-    plt.plot([0,5.5],[54,54],color=linecolor)
-    plt.plot([5.5,5.5],[54,36],color=linecolor)
-    plt.plot([5.5,0.5],[36,36],color=linecolor)
-    
-    #Right 6-yard Box
-    plt.plot([130,124.5],[54,54],color=linecolor)
-    plt.plot([124.5,124.5],[54,36],color=linecolor)
-    plt.plot([124.5,130],[36,36],color=linecolor)
-    
-    #Prepare Circles
-    centreCircle = plt.Circle((65,45),9.15,color=linecolor,fill=False)
-    centreSpot = plt.Circle((65,45),0.8,color=linecolor)
-    leftPenSpot = plt.Circle((11,45),0.8,color=linecolor)
-    rightPenSpot = plt.Circle((119,45),0.8,color=linecolor)
-    
-    #Draw Circles
+    # Pitch outline
+    plt.plot([0,max_x], [0, 0], color=linecolor)
+    plt.plot([max_x, max_x], [0, max_y], color=linecolor)
+    plt.plot([max_x, 0], [max_y, max_y], color=linecolor)
+    plt.plot([0, 0], [max_y, 0], color=linecolor)
+
+    # Plot penalty area
+    plt.plot([18, 62],[max_y-18, max_y-18], color=linecolor)
+    plt.plot([18, 18],[max_y-18, max_y], color=linecolor)
+    plt.plot([62, 62],[max_y-18, max_y], color=linecolor)
+
+    # Plot 6 yard box
+    plt.plot([max_x/2-4-6, max_x/2+4+6],[max_y-6, max_y-6], color=linecolor)
+    plt.plot([max_x/2-4-6, max_x/2-4-6],[max_y-6, max_y], color=linecolor)
+    plt.plot([max_x/2+4+6, max_x/2+4+6],[max_y-6, max_y], color=linecolor)
+
+    # Plot goal
+    plt.plot([max_x/2-4, max_x/2+4],[max_y+2.7, max_y+2.7], color=linecolor)
+    plt.plot([max_x/2-4, max_x/2-4],[max_y+2.7, max_y], color=linecolor)
+    plt.plot([max_x/2+4, max_x/2+4],[max_y+2.7, max_y], color=linecolor)
+
+    # circles
+    penSpot = plt.Circle((max_x/2, max_y-12),0.8,color=linecolor)
+    ax.add_patch(penSpot)
+    #Prepare Arcs
+    arc = Arc((max_x/2,max_y-18+6.5),height=20,width=20,angle=90,theta1=130,theta2=230,color=linecolor)
+    ax.add_patch(arc)
+    centreCircle = Arc((max_x/2, 0),height=20,width=20,angle=0,theta1=0,theta2=180,color=linecolor)
     ax.add_patch(centreCircle)
+    centreSpot = Arc((max_x/2, 0),height=.8,width=.8,angle=0,theta1=0,theta2=180,color=linecolor, linewidth=2)
     ax.add_patch(centreSpot)
-    ax.add_patch(leftPenSpot)
-    ax.add_patch(rightPenSpot)
-    
-    #Prepare Arcs
-    leftArc = Arc((11,45),height=18.3,width=18.3,angle=0,theta1=310,theta2=50,color=linecolor)
-    rightArc = Arc((119,45),height=18.3,width=18.3,angle=0,theta1=130,theta2=230,color=linecolor)
-
-    #Draw Arcs
-    ax.add_patch(leftArc)
-    ax.add_patch(rightArc)
-    
-    #Tidy Axes
     plt.axis('off')
-    
-    return fig,ax
 
-def createGoalMouth():
-    #Adopted from FC Python
-    #Create figure
-    fig=plt.figure()
-    ax=fig.add_subplot(1,1,1)
-
-    linecolor='black'
-
-    #Pitch Outline & Centre Line
-    plt.plot([0,65],[0,0], color=linecolor)
-    plt.plot([65,65],[50,0], color=linecolor)
-    plt.plot([0,0],[50,0], color=linecolor)
-    
-    #Left Penalty Area
-    plt.plot([12.5,52.5],[16.5,16.5],color=linecolor)
-    plt.plot([52.5,52.5],[16.5,0],color=linecolor)
-    plt.plot([12.5,12.5],[0,16.5],color=linecolor)
-    
-    #Left 6-yard Box
-    plt.plot([41.5,41.5],[5.5,0],color=linecolor)
-    plt.plot([23.5,41.5],[5.5,5.5],color=linecolor)
-    plt.plot([23.5,23.5],[0,5.5],color=linecolor)
-    
-    #Goal
-    plt.plot([41.5-5.34,41.5-5.34],[-2,0],color=linecolor)
-    plt.plot([23.5+5.34,41.5-5.34],[-2,-2],color=linecolor)
-    plt.plot([23.5+5.34,23.5+5.34],[0,-2],color=linecolor)
-    
-    #Prepare Circles
-    leftPenSpot = plt.Circle((65/2,11),0.8,color=linecolor)
-    
-    #Draw Circles
-    ax.add_patch(leftPenSpot)
-    
-    #Prepare Arcs
-    leftArc = Arc((32.5,11),height=18.3,width=18.3,angle=0,theta1=38,theta2=142,color=linecolor)
-    
-    #Draw Arcs
-    ax.add_patch(leftArc)
-    
-    #Tidy Axes
-    plt.axis('off')
-    
-    return fig,ax
-
+    return fig, ax

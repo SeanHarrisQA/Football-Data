@@ -32,7 +32,8 @@ def load_event_data(comp_id, season_id):
             scoreline = i['home_team']['home_team_name'] + ' ' + str(i['home_score']) + '-' + str(i['away_score']) + ' ' + i['away_team']['away_team_name']
             select_game[scoreline] = { "id" : i['match_id'],
                                       "home" : i['home_team']['home_team_name'],
-                                      "away" : i['away_team']['away_team_name']
+                                      "away" : i['away_team']['away_team_name'],
+                                      "scoreline" : scoreline
                                       }
     return select_game
 
@@ -58,15 +59,17 @@ game_option = st.sidebar.selectbox('Please select a game', (select_game.keys()))
 match_id = select_game[game_option]['id']
 home = select_game[game_option]['home']
 away = select_game[game_option]['away']
+scoreline = select_game[game_option]['scoreline']
 
 if st.sidebar.button('Load match') or 'df' not in st.session_state:
     st.session_state.df = load_match_data(match_id)
     st.session_state.home = home
     st.session_state.away = away
     st.session_state.lineups = load_lineup_data(match_id)
+    st.session_state.scoreline = scoreline
     
 st.subheader('More match data to go here')
-st.write(st.session_state.home + ' vs ' + st.session_state.away)
+st.write(st.session_state.scoreline)
 for lineup in st.session_state.lineups:
     st.dataframe(lineup)
 st.dataframe(st.session_state.df)
