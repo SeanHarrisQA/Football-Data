@@ -6,7 +6,19 @@ import json
 from FCPython import createPitch
 import matplotlib.pyplot as plt
 from MyFCPython import createHalf
+st.set_page_config(layout="wide")
+st.markdown("""
+        <style>
+               .block-container {
+                    padding-top: 1rem;
+                    padding-bottom: 0rem;
+                    padding-left: 5rem;
+                    padding-right: 5rem;
+                }
+        </style>
+        """, unsafe_allow_html=True)
 
+@st.cache_data
 def load_competitions(local):
     if local:
         all_competitions = pd.read_json(filepath + 'competitions.json')
@@ -14,6 +26,7 @@ def load_competitions(local):
         all_competitions = sb.competitions()
     return all_competitions
 
+@st.cache_data
 def load_matches(local, season_id):
     if local:
         with open(filepath + '/matches/11/' + str(season_id) + '.json') as f:
@@ -23,6 +36,7 @@ def load_matches(local, season_id):
         all_matches = sb.matches(competition_id=11, season_id=season_id)
     return all_matches
 
+@st.cache_data(max_entries=38)
 def load_event(local, match_id):
     if local:
         with open(filepath + '/events/' + str(match_id) + '.json') as f:
@@ -31,6 +45,16 @@ def load_event(local, match_id):
     else:
         event = sb.events(match_id=match_id)
     return event
+
+@st.cache_data
+def load_lineup(local, match_id):
+    if local:
+        with open(filepath + '/lineups/' + str(match_id) + '.json') as f:
+            game = json.load(f)
+            game = pd.json_normalize(game)
+    else:
+        game = sb.lineups(match_id=match_id)
+    return game
 
 def draw_shotmap(shots):
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
@@ -60,6 +84,7 @@ def draw_shotmap(shots):
     st.pyplot(fig)
     st.divider()
 
+@st.cache_data
 def draw_shotmap_half_pitch(shots):
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
     fig.patch.set_alpha(0)
@@ -98,18 +123,39 @@ def draw_shotmap_half_pitch(shots):
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
 
-# Set layout wide, this always needs to be the first call you make to streamlit after importing
-# st.set_page_config(layout="wide")
-st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
+def calculate_most_common_positions(games):
+    all_positions = [0 for x in range(25)]
+    for i, match in games.iterrows():
+        lineups = load_lineup(True, match['match_id'])
+        lineups = lineups[lineups['team_name'] == 'Barcelona']
+
+        event = load_event(True, match['match_id'])
+        event = event.iloc[len(event) - 1]
+        final_min, final_sec = int(event['minute']), int(event['second'])
+        # st.write(event) 
+        for i, lineup in lineups.iterrows():
+            for x in lineup['lineup']:
+                if x['player_id'] == player_id:
+                    for y in x['positions']:
+                        # st.write(y)
+                        position_id = y['position_id']
+                        start_min, start_sec = y['from'].split(':')
+                        start_min, start_sec = int(start_min), int(start_sec)
+                        if y['to']:
+                            end_min, end_sec = y['to'].split(':')
+                            end_min, end_sec = int(end_min), int(end_sec)
+                        else:
+                            end_min, end_sec = final_min, final_sec
+                        # st.write(start_min, start_sec, end_min, end_sec)
+                        # print(type(start_min))
+                        # print(type(start_sec))
+                        # print(type(end_min))
+                        # print(type(end_sec))
+                        all_positions[position_id] += 60 * (end_min - start_min) + (end_sec - start_sec)
+                        # st.write(60 * (end_min - start_min) + (end_sec - start_sec))
+        # return True # Stop the loop executing in development
+    st.write(all_positions)
+    return True
 
 st.title('Player Biography')
 
@@ -177,7 +223,6 @@ with col2:
 
     # Tally shots for each time
     piechart_values = season_shots['shot_body_part_name'].value_counts()
-    #st.write(piechart_values)
     inner_values = []
     for body_part in piechart_values.index:
         bool = (season_shots['shot_body_part_name'] == body_part) & (season_shots['shot_outcome_name'] == 'Goal')
@@ -207,3 +252,4 @@ with col2:
 
 my_bar.empty()
 
+calculate_most_common_positions(all_matches)
