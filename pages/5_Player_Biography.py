@@ -6,6 +6,15 @@ import json
 from FCPython import createPitch
 import matplotlib.pyplot as plt
 from MyFCPython import createHalf
+from Statsbomb_Position import Statsbomb_Position
+
+# 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+# 
+
 st.set_page_config(layout="wide")
 st.markdown("""
         <style>
@@ -114,7 +123,6 @@ def draw_shotmap_half_pitch(shots):
             ax.add_patch(shot_circle)
 
     average_distance = np.round(total_distance / len(season_shots), 2)
-    # st.write("Average distance " +str(average_distance))
     plt.plot([9,9], [60, 60-average_distance], color='gray')
     plt.text(9, 60-average_distance-5, 'Average\ndistance\n' + str(average_distance) + ' yards', horizontalalignment='center',verticalalignment='center', color='grey')
 
@@ -124,7 +132,7 @@ def draw_shotmap_half_pitch(shots):
     st.pyplot(fig)
 
 def calculate_most_common_positions(games):
-    all_positions = [0 for x in range(25)]
+    all_positions = [0 for x in range(26)]
     for i, match in games.iterrows():
         lineups = load_lineup(True, match['match_id'])
         lineups = lineups[lineups['team_name'] == 'Barcelona']
@@ -132,12 +140,11 @@ def calculate_most_common_positions(games):
         event = load_event(True, match['match_id'])
         event = event.iloc[len(event) - 1]
         final_min, final_sec = int(event['minute']), int(event['second'])
-        # st.write(event) 
+
         for i, lineup in lineups.iterrows():
             for x in lineup['lineup']:
                 if x['player_id'] == player_id:
                     for y in x['positions']:
-                        # st.write(y)
                         position_id = y['position_id']
                         start_min, start_sec = y['from'].split(':')
                         start_min, start_sec = int(start_min), int(start_sec)
@@ -146,16 +153,75 @@ def calculate_most_common_positions(games):
                             end_min, end_sec = int(end_min), int(end_sec)
                         else:
                             end_min, end_sec = final_min, final_sec
-                        # st.write(start_min, start_sec, end_min, end_sec)
-                        # print(type(start_min))
-                        # print(type(start_sec))
-                        # print(type(end_min))
-                        # print(type(end_sec))
                         all_positions[position_id] += 60 * (end_min - start_min) + (end_sec - start_sec)
-                        # st.write(60 * (end_min - start_min) + (end_sec - start_sec))
-        # return True # Stop the loop executing in development
     st.write(all_positions)
+    draw_positions_by_minutes(all_positions)
     return True
+
+def draw_positions_by_minutes(positions):
+    statsbomb_positions = get_all_statsbomb_positions()
+
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig.set_facecolor('black')
+
+    viridis = mpl.colormaps['plasma'].resampled(8)
+    total_minutes = sum(positions)
+    position_strings = ['' for x in range(len(positions) + 1)]
+    for i in range(len(positions)):
+       position_strings[i] = str(np.round((positions[i] / total_minutes) * 100, 2)) + '%'
+       positions[i] = positions[i] / total_minutes
+
+    m = max(positions)
+
+    st.write('Pos')
+    st.write(positions) 
+    for i in range(len(positions)):
+       positions[i] /= m
+
+    st.write('Pos')
+    st.write(positions)
+    for i in range(1, len(statsbomb_positions)):
+        x = statsbomb_positions[i].location[0]
+        y = statsbomb_positions[i].location[1]
+        s = statsbomb_positions[i].abbrv
+        c = viridis(positions[i])
+        plt.text(x, y, s, color=c, ha='center', va='bottom', family='fantasy')
+        plt.text(x, y, position_strings[i], color=c, ha='center', va='top', fontsize='xx-small', family='fantasy')
+    st.pyplot(fig)
+        
+    
+def get_all_statsbomb_positions():
+    statsbomb_positions = []
+
+    x = [12, 28, 45, 60, 75, 92, 108]
+    y = [10, 25, 40, 55, 70]
+    statsbomb_positions.append(Statsbomb_Position('Dummy', [0,0]))
+    statsbomb_positions.append(Statsbomb_Position('GK', [x[0], y[2]]))
+    statsbomb_positions.append(Statsbomb_Position('RB', [x[1], y[0]]))
+    statsbomb_positions.append(Statsbomb_Position('RCB', [x[1], y[1]]))
+    statsbomb_positions.append(Statsbomb_Position('CB', [x[1], y[2]]))
+    statsbomb_positions.append(Statsbomb_Position('LCB', [x[1], y[3]]))
+    statsbomb_positions.append(Statsbomb_Position('LB', [x[1], y[4]]))
+    statsbomb_positions.append(Statsbomb_Position('RWB', [x[2], y[0]]))
+    statsbomb_positions.append(Statsbomb_Position('RDM', [x[2], y[1]]))
+    statsbomb_positions.append(Statsbomb_Position('CDM', [x[2], y[2]]))
+    statsbomb_positions.append(Statsbomb_Position('LDM', [x[2], y[3]]))
+    statsbomb_positions.append(Statsbomb_Position('LWB', [x[2], y[4]]))
+    statsbomb_positions.append(Statsbomb_Position('RM', [x[3], y[0]]))
+    statsbomb_positions.append(Statsbomb_Position('RCM', [x[3], y[1]]))
+    statsbomb_positions.append(Statsbomb_Position('CM', [x[3], y[2]]))
+    statsbomb_positions.append(Statsbomb_Position('LCM', [x[3], y[3]]))
+    statsbomb_positions.append(Statsbomb_Position('LM', [x[3], y[4]]))
+    statsbomb_positions.append(Statsbomb_Position('RW', [x[4], y[0]]))
+    statsbomb_positions.append(Statsbomb_Position('RAM', [x[4], y[1]]))
+    statsbomb_positions.append(Statsbomb_Position('CAM', [x[4], y[2]]))
+    statsbomb_positions.append(Statsbomb_Position('LAM', [x[4], y[3]]))
+    statsbomb_positions.append(Statsbomb_Position('LW', [x[4], y[4]]))
+    statsbomb_positions.append(Statsbomb_Position('RCF', [x[6], y[1]]))
+    statsbomb_positions.append(Statsbomb_Position('ST', [x[6], y[2]]))
+    statsbomb_positions.append(Statsbomb_Position('LCF', [x[6], y[3]]))
+    statsbomb_positions.append(Statsbomb_Position('SS', [x[5], y[2]]))
+    return statsbomb_positions
 
 st.title('Player Biography')
 
