@@ -91,7 +91,7 @@ def draw_shotmap_half_pitch(shots):
     average_distance = np.round(total_distance / len(season_shots), 2)
     # st.write("Average distance " +str(average_distance))
     plt.plot([9,9], [60, 60-average_distance], color='gray')
-    plt.text(9, 60-average_distance-6, 'Average\ndistance\n' + str(average_distance) + ' yards', horizontalalignment='center',verticalalignment='center', color='grey')
+    plt.text(9, 60-average_distance-5, 'Average\ndistance\n' + str(average_distance) + ' yards', horizontalalignment='center',verticalalignment='center', color='grey')
 
     # Draw the shotmaps
     st.subheader('Shot Map')
