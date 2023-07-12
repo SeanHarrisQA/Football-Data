@@ -7,6 +7,8 @@ from FCPython import createPitch
 import matplotlib.pyplot as plt
 from MyFCPython import createHalf
 from Statsbomb_Position import Statsbomb_Position
+import math
+from scipy.ndimage.filters import gaussian_filter
 
 # 
 import matplotlib as mpl
@@ -48,7 +50,7 @@ def load_event(local, match_id):
     if local:
         with open(filepath + '/events/' + str(match_id) + '.json') as f:
             event = json.load(f)
-            event = pd.json_normalize(event, sep='_')
+            event = pd.json_normalize(event, sep='_').assign(match_id=match_id)
     else:
         event = sb.events(match_id=match_id)
     return event
@@ -141,19 +143,50 @@ def draw_shotmap_half_pitch(shots):
             shot_circle.set_alpha(.4)
             ax.add_patch(shot_circle)
 
-    average_distance = np.round(total_distance / len(season_shots), 2)
-    plt.plot([9,9], [60, 60-average_distance], color='gray')
-    plt.text(9, 60-average_distance-5, 'Average\ndistance\n' + str(average_distance) + ' yards', horizontalalignment='center',verticalalignment='center', color='grey')
+    if len(season_shots) > 0:
+        average_distance = np.round(total_distance / len(season_shots), 2)
+        plt.plot([9,9], [60, 60-average_distance], color='gray')
+        plt.text(9, 60-average_distance-5, 'Average\ndistance\n' + str(average_distance) + ' yards', horizontalalignment='center',verticalalignment='center', color='grey')
 
     # Draw the shotmaps
     st.subheader('Shot Map')
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
 
-@st.cache_data
-def draw_heatmap_half_pitch(passes):
+def draw_heatmap_half_pitch(df):
+    
+
+    # Calculate the touch heatmap for the given player
+    heatmap = calculate_action_heatmap(df)
+    heatmap_f = gaussian_filter(heatmap, sigma=3)
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
+    plt.imshow(heatmap_f, cmap='magma')
+    fig.patch.set_alpha(0)
+    st.pyplot(fig)
+    adj_heatmap = np.zeros((61, 81))
+    for i in range(61):
+        for j in range(81):
+            adj_heatmap[i, j] = heatmap[80-j, 60-(120-i)]
+    
+
+    # Create half pitch figure
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
     fig.patch.set_alpha(0)
+    adj_heatmap_f = gaussian_filter(adj_heatmap, sigma=2)
+    # Draw the heatmap to the UI
+    plt.imshow(adj_heatmap_f, cmap='magma')
+    st.pyplot(fig)
+
+def calculate_action_heatmap(df):
+    # Only use the actions where the player has the ball
+    player_actions = df[(df['player_id'] == player_id) & (~df['location'].isna()) & (df['pass_type_name'] != 'Corner')]
+    heatmap = np.zeros((81,121), float)
+    for i, action in player_actions.iterrows():
+        x = np.round(action['location'][0]).astype(int)
+        y = np.round(action['location'][1]).astype(int)
+        if y < 81 and x < 121:
+            heatmap[y,x] +=1
+    return heatmap
 
 def calculate_most_common_positions(games):
     all_positions = [0 for x in range(26)]
@@ -188,6 +221,8 @@ def draw_positions_by_minutes(positions):
 
     viridis = mpl.colormaps['plasma'].resampled(8)
     total_minutes = sum(positions)
+    if total_minutes == 0:
+        return
     position_strings = ['' for x in range(len(positions) + 1)]
     for i in range(len(positions)):
        position_strings[i] = str(np.round((positions[i] / total_minutes) * 100, 2)) + '%'
@@ -264,13 +299,11 @@ season_actions = load_season_actions(True, all_matches)
 bool = (season_actions['player_id'] == player_id) & (season_actions['type_name'] == 'Shot') & (season_actions['shot_type_id'] != 88)
 season_shots = season_actions[bool]
 
+# Shot graphics for season
 st.subheader("Lionel Messi non-penalty shots " + str(season))
-
 col1, col2 = st.columns([3, 2])
-
 with col1:
     draw_shotmap_half_pitch(season_shots)
-
 with col2:
     goals = len(season_shots[season_shots['shot_outcome_name'] == 'Goal'])
     shots = len(season_shots)
@@ -314,7 +347,10 @@ with col2:
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
 
-# calculate_most_common_positions(all_matches)
+calculate_most_common_positions(all_matches)
 
+
+# Season heatmap
 st.dataframe(season_actions)
+st.write(season_actions['type_name'].unique())
 draw_heatmap_half_pitch(season_actions)
