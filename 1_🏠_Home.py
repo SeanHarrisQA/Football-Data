@@ -73,3 +73,4 @@ st.write(st.session_state.scoreline)
 for lineup in st.session_state.lineups:
     st.dataframe(lineup)
 st.dataframe(st.session_state.df)
+st.write(st.session_state.df.columns)

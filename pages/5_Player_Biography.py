@@ -9,8 +9,6 @@ from MyFCPython import createHalf
 from Statsbomb_Position import Statsbomb_Position
 
 # 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 # 
@@ -45,7 +43,7 @@ def load_matches(local, season_id):
         all_matches = sb.matches(competition_id=11, season_id=season_id)
     return all_matches
 
-@st.cache_data(max_entries=38)
+@st.cache_data
 def load_event(local, match_id):
     if local:
         with open(filepath + '/events/' + str(match_id) + '.json') as f:
@@ -64,6 +62,27 @@ def load_lineup(local, match_id):
     else:
         game = sb.lineups(match_id=match_id)
     return game
+
+@st.cache_data(show_spinner=False)
+def load_season_actions(local, matches):
+    progress_text = "Loading season actions. Please wait."
+    my_bar = st.progress(0, text=progress_text)
+    iteration_prcnt = 100 // len(all_matches)
+    progress = 0
+    season_actions = pd.DataFrame()
+    for i, match in all_matches.iterrows():
+        # Load match
+        event = load_event(local, match['match_id'])
+        # Take all the events that involved that player
+        bool = (event['player_id'] == player_id) | (event['pass_recipient_id'] == player_id)
+        actions = event[bool]
+        season_actions = pd.concat([season_actions, actions])
+        progress+=iteration_prcnt
+        my_bar.progress(progress, text=progress_text)
+    my_bar.progress(100, text='Data successfully loaded')
+    my_bar.empty()
+    season_actions.reset_index(drop=True, inplace=True)
+    return season_actions
 
 def draw_shotmap(shots):
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
@@ -131,6 +150,11 @@ def draw_shotmap_half_pitch(shots):
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
 
+@st.cache_data
+def draw_heatmap_half_pitch(passes):
+    fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
+    fig.patch.set_alpha(0)
+
 def calculate_most_common_positions(games):
     all_positions = [0 for x in range(26)]
     for i, match in games.iterrows():
@@ -154,15 +178,13 @@ def calculate_most_common_positions(games):
                         else:
                             end_min, end_sec = final_min, final_sec
                         all_positions[position_id] += 60 * (end_min - start_min) + (end_sec - start_sec)
-    st.write(all_positions)
     draw_positions_by_minutes(all_positions)
-    return True
 
 def draw_positions_by_minutes(positions):
     statsbomb_positions = get_all_statsbomb_positions()
 
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    fig.set_facecolor('black')
+    fig.patch.set_alpha(0)
 
     viridis = mpl.colormaps['plasma'].resampled(8)
     total_minutes = sum(positions)
@@ -170,26 +192,18 @@ def draw_positions_by_minutes(positions):
     for i in range(len(positions)):
        position_strings[i] = str(np.round((positions[i] / total_minutes) * 100, 2)) + '%'
        positions[i] = positions[i] / total_minutes
-
     m = max(positions)
-
-    st.write('Pos')
-    st.write(positions) 
     for i in range(len(positions)):
        positions[i] /= m
-
-    st.write('Pos')
-    st.write(positions)
     for i in range(1, len(statsbomb_positions)):
         x = statsbomb_positions[i].location[0]
         y = statsbomb_positions[i].location[1]
         s = statsbomb_positions[i].abbrv
-        c = viridis(positions[i])
-        plt.text(x, y, s, color=c, ha='center', va='bottom', family='fantasy')
-        plt.text(x, y, position_strings[i], color=c, ha='center', va='top', fontsize='xx-small', family='fantasy')
+        # c = viridis(positions[i])
+        plt.text(x, y, s, color='whitesmoke', ha='center', va='bottom', family='fantasy')
+        plt.text(x, y, position_strings[i], color='whitesmoke', ha='center', va='top', fontsize='xx-small', family='fantasy')
     st.pyplot(fig)
-        
-    
+            
 def get_all_statsbomb_positions():
     statsbomb_positions = []
 
@@ -245,28 +259,12 @@ season = st.select_slider('Select a season', reversed(all_seasons.keys()))
 
 all_matches = load_matches(True, all_seasons[season])
 
-season_shots = pd.DataFrame()
-check = 0
+season_actions = load_season_actions(True, all_matches)
 
-progress_text = "Operation in progress. Please wait."
-my_bar = st.progress(0, text=progress_text)
-iteration_prcnt = 100 // len(all_matches)
-progress = 0
-
-for i, match in all_matches.iterrows():
-    # Load match
-    event = load_event(True, match['match_id'])
-    bool = (event['player_id'] == player_id) & (event['type_name'] == 'Shot') & (event['shot_type_id'] != 88)
-    shots = event[bool]
-    season_shots = pd.concat([season_shots, shots])
-    progress+=iteration_prcnt
-    my_bar.progress(progress, text=progress_text)
-
-my_bar.progress(100, text='Data successfully loaded')
+bool = (season_actions['player_id'] == player_id) & (season_actions['type_name'] == 'Shot') & (season_actions['shot_type_id'] != 88)
+season_shots = season_actions[bool]
 
 st.subheader("Lionel Messi non-penalty shots " + str(season))
-
-my_bar.progress(100, text='Data successfully loaded')
 
 col1, col2 = st.columns([3, 2])
 
@@ -316,6 +314,7 @@ with col2:
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
 
-my_bar.empty()
+# calculate_most_common_positions(all_matches)
 
-calculate_most_common_positions(all_matches)
+st.dataframe(season_actions)
+draw_heatmap_half_pitch(season_actions)
