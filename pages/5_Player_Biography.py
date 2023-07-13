@@ -159,8 +159,8 @@ def draw_heatmap_half_pitch(df):
     # Calculate the touch heatmap for the given player
     heatmap = calculate_action_heatmap(df)
     heatmap_f = gaussian_filter(heatmap, sigma=3)
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
-    plt.imshow(heatmap_f, cmap='magma')
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    plt.imshow(heatmap_f, cmap='magma', origin='lower')
     fig.patch.set_alpha(0)
     st.pyplot(fig)
     adj_heatmap = np.zeros((61, 81))
@@ -172,20 +172,27 @@ def draw_heatmap_half_pitch(df):
     # Create half pitch figure
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
     fig.patch.set_alpha(0)
-    adj_heatmap_f = gaussian_filter(adj_heatmap, sigma=2)
+    adj_heatmap_f = gaussian_filter(adj_heatmap, sigma=3)
+    plt.imshow(adj_heatmap_f, cmap='magma', origin='lower')
     # Draw the heatmap to the UI
-    plt.imshow(adj_heatmap_f, cmap='magma')
+    
     st.pyplot(fig)
 
 def calculate_action_heatmap(df):
     # Only use the actions where the player has the ball
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig.patch.set_alpha(0)
     player_actions = df[(df['player_id'] == player_id) & (~df['location'].isna()) & (df['pass_type_name'] != 'Corner')]
     heatmap = np.zeros((81,121), float)
     for i, action in player_actions.iterrows():
         x = np.round(action['location'][0]).astype(int)
-        y = np.round(action['location'][1]).astype(int)
+        y = 80 - np.round(action['location'][1]).astype(int)
         if y < 81 and x < 121:
             heatmap[y,x] +=1
+            circ = plt.Circle((x, y), .5, color='mediumorchid')
+            circ.set_alpha(0.1)
+            ax.add_patch(circ)
+    st.pyplot(fig)
     return heatmap
 
 def calculate_most_common_positions(games):
@@ -351,6 +358,6 @@ calculate_most_common_positions(all_matches)
 
 
 # Season heatmap
-st.dataframe(season_actions)
-st.write(season_actions['type_name'].unique())
+# st.dataframe(season_actions)
+# st.write(season_actions['type_name'].unique())
 draw_heatmap_half_pitch(season_actions)
