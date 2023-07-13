@@ -9,7 +9,7 @@ from MyFCPython import createHalf
 from Statsbomb_Position import Statsbomb_Position
 import math
 from scipy.ndimage.filters import gaussian_filter
-
+import seaborn as sns
 # 
 import matplotlib as mpl
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
@@ -155,28 +155,23 @@ def draw_shotmap_half_pitch(shots):
 
 
 def draw_heatmap_half_pitch(df):
-    
-
     # Calculate the touch heatmap for the given player
     heatmap = calculate_action_heatmap(df)
-    heatmap_f = gaussian_filter(heatmap, sigma=3)
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    plt.imshow(heatmap_f, cmap='magma', origin='lower')
-    fig.patch.set_alpha(0)
-    st.pyplot(fig)
+    # heatmap_f = gaussian_filter(heatmap, sigma=3)
+    # fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    # plt.imshow(heatmap_f, cmap='magma', origin='lower')
+    # fig.patch.set_alpha(0)
+    # st.pyplot(fig)
+    # Adjust the coordinates so they can be drawn on a half pitch(attacking)
     adj_heatmap = np.zeros((61, 81))
     for i in range(61):
         for j in range(81):
             adj_heatmap[i, j] = heatmap[80-j, 60-(120-i)]
-    
-
     # Create half pitch figure
     fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
     fig.patch.set_alpha(0)
     adj_heatmap_f = gaussian_filter(adj_heatmap, sigma=3)
     plt.imshow(adj_heatmap_f, cmap='magma', origin='lower')
-    # Draw the heatmap to the UI
-    
     st.pyplot(fig)
 
 def draw_hres_heatmap(df, s, scale):
@@ -188,30 +183,40 @@ def draw_hres_heatmap(df, s, scale):
         y = np.round(action['location'][1] * scale).astype(int)
         nums.append(x)
         nums.append(y)
-        heatmap[y,x] +=1
+        if y < pitch_height * scale + 1 and x < pitch_width * scale + 1:
+            heatmap[y,x] +=1
 
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = plt.subplots(figsize=(12, 8))
     fig.patch.set_alpha(0)
     heatmap=gaussian_filter(heatmap, sigma=s)
-    plt.imshow(heatmap, cmap='magma')
+    sns.heatmap(data=heatmap, ax=ax, cmap='magma', cbar=False)
+    my_levels = np.arange(0.1, 1, 0.1).tolist()
+    st.write(my_levels)
+    ax.contour(np.arange(.5, heatmap.shape[1]), np.arange(.5, heatmap.shape[0]), heatmap, colors='violet', levels=my_levels)
+    plt.tick_params(left = False, bottom = False)
+    plt.xticks([])
+    plt.yticks([])
+    ax.tick_params(left = False, bottom = False)
+    # plt.imshow(heatmap, cmap='magma')
     st.pyplot(fig)
 
 
 def calculate_action_heatmap(df):
     # Only use the actions where the player has the ball
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    fig.patch.set_alpha(0)
+    # fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    # fig.patch.set_alpha(0)
     player_actions = df[(df['player_id'] == player_id) & (~df['location'].isna()) & (df['pass_type_name'] != 'Corner')]
     heatmap = np.zeros((81,121), float)
     for i, action in player_actions.iterrows():
         x = np.round(action['location'][0]).astype(int)
-        y = 80 - np.round(action['location'][1]).astype(int)
+        y = pitch_height - np.round(action['location'][1]).astype(int)
         if y < 81 and x < 121:
             heatmap[y,x] +=1
-            circ = plt.Circle((x, y), .5, color='mediumorchid')
-            circ.set_alpha(0.1)
-            ax.add_patch(circ)
-    st.pyplot(fig)
+            # circ = plt.Circle((x, y), .5, color='mediumorchid')
+            # circ.set_alpha(0.1)
+            # ax.add_patch(circ)
+    # st.pyplot(fig)
     return heatmap
 
 def calculate_most_common_positions(games):
@@ -382,4 +387,4 @@ with col2:
 draw_heatmap_half_pitch(season_actions)
 
 # sigma = st.slider('How old are you?', 0, 30)
-# draw_hres_heatmap(season_actions, sigma, 2)
+draw_hres_heatmap(season_actions, 9, 3)
