@@ -153,6 +153,7 @@ def draw_shotmap_half_pitch(shots):
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
 
+
 def draw_heatmap_half_pitch(df):
     
 
