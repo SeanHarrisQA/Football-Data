@@ -178,6 +178,24 @@ def draw_heatmap_half_pitch(df):
     
     st.pyplot(fig)
 
+def draw_hres_heatmap(df, s, scale):
+    player_actions = df[(df['player_id'] == player_id) & (~df['location'].isna()) & (df['pass_type_name'] != 'Corner')]
+    heatmap = np.zeros((pitch_height * scale + 1, pitch_width * scale + 1), float)
+    nums = []
+    for i, action in player_actions.iterrows():
+        x = np.round(action['location'][0] * scale).astype(int)
+        y = np.round(action['location'][1] * scale).astype(int)
+        nums.append(x)
+        nums.append(y)
+        heatmap[y,x] +=1
+
+    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig.patch.set_alpha(0)
+    heatmap=gaussian_filter(heatmap, sigma=s)
+    plt.imshow(heatmap, cmap='magma')
+    st.pyplot(fig)
+
+
 def calculate_action_heatmap(df):
     # Only use the actions where the player has the ball
     fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
@@ -354,10 +372,13 @@ with col2:
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
 
-calculate_most_common_positions(all_matches)
+# calculate_most_common_positions(all_matches)
 
 
 # Season heatmap
 # st.dataframe(season_actions)
 # st.write(season_actions['type_name'].unique())
 draw_heatmap_half_pitch(season_actions)
+
+# sigma = st.slider('How old are you?', 0, 30)
+# draw_hres_heatmap(season_actions, sigma, 2)
