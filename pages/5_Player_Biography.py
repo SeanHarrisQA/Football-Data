@@ -334,6 +334,7 @@ st.subheader("Lionel Messi non-penalty shots " + str(season))
 col1, col2 = st.columns([3, 2])
 with col1:
     draw_shotmap_half_pitch(season_shots)
+    draw_hres_heatmap(season_actions, 6, 2)
 with col2:
     goals = len(season_shots[season_shots['shot_outcome_name'] == 'Goal'])
     shots = len(season_shots)
@@ -376,6 +377,12 @@ with col2:
         autotext.set_color('white')
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
+    st.text(" ")
+    st.text(" ")
+    st.text(" ")
+    st.text(" ")
+    st.text(" ")
+    draw_heatmap_half_pitch(season_actions)
 
 # calculate_most_common_positions(all_matches)
 
@@ -383,7 +390,4 @@ with col2:
 # Season heatmap
 # st.dataframe(season_actions)
 # st.write(season_actions['type_name'].unique())
-draw_heatmap_half_pitch(season_actions)
 
-# sigma = st.slider('How old are you?', 0, 30)
-draw_hres_heatmap(season_actions, 21, 7)
