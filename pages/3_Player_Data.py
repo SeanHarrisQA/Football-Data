@@ -5,7 +5,7 @@ from FCPython import createPitch
 import streamlit as st
 import math
 
-@st.cache_data(max_entries=20)
+# @st.cache_data(max_entries=20)
 def draw_passmap(game, player, values):
     # Pass map for given player
     st.subheader('Pass Map')
@@ -43,7 +43,7 @@ def draw_passmap(game, player, values):
     st.caption('Direction of play from left to right')
     st.divider()
 
-@st.cache_data(max_entries=20)
+# @st.cache_data(max_entries=20)
 def draw_heatmap(game, player):
     # Heatmap for a given player
     st.subheader('Heat Map')
@@ -74,6 +74,26 @@ def draw_heatmap(game, player):
     st.caption('Direction of play from left to right')
     st.divider()
 
+def draw_simple_sonar(game, player):
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
+    fig.patch.set_alpha(0)
+    bool = (game['player_name'] == player) & (game['type_name'] == 'Pass')
+    passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
+    passes.reset_index(drop=True, inplace=True)
+    # passes = passes.loc[:10]
+    st.dataframe(passes)
+    for i, a_pass in passes.iterrows():
+        angle = a_pass['pass_angle']
+        x_end = a_pass['pass_end_location'][0] + (60 - a_pass['location'][0])
+        y_end = pitch_width - (a_pass['pass_end_location'][1] + (40 - a_pass['location'][1]))
+        x_start = a_pass['location'][0] + (60 - a_pass['location'][0])
+        y_start = pitch_width - (a_pass['location'][1] + (40 - a_pass['location'][1]))
+        if angle > 0:
+            plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='yellow', head_width=1.5, head_length=2, length_includes_head=True)
+        else:
+            plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='blue', head_width=1.5, head_length=2, length_includes_head=True)    
+    st.pyplot(fig)
+
 # Variables used throughout the script
 pitch_length = 120
 pitch_width = 80
@@ -88,7 +108,6 @@ else:
 selected_player = st.sidebar.radio("Select a team", (players))
 
 st.title('Player analysis')
-
 # Start of page
 st.subheader(selected_player)
 st.write(st.session_state.scoreline)
@@ -99,5 +118,6 @@ values = st.slider(
     0, 100, (0, 100))
 st.write('Values:', values)
 
+draw_simple_sonar(game, selected_player)
 draw_passmap(game, selected_player, values)
 draw_heatmap(game, selected_player)
