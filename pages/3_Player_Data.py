@@ -17,7 +17,7 @@ def draw_passmap(game, player, values):
 
     passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
     # Create plot
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'white')
     fig.patch.set_alpha(0)
     # Plot the passes
     for a_pass in passes.iterrows():
@@ -25,9 +25,9 @@ def draw_passmap(game, player, values):
         #angle = a_pass[1][1]
         complete = math.isnan(a_pass[1][6]) or a_pass[1][6] == 76
         x_end = a_pass[1][2][0] 
-        y_end = pitch_height-a_pass[1][2][1]
+        y_end = pitch_width-a_pass[1][2][1]
         x_start = a_pass[1][3][0]
-        y_start = pitch_height-a_pass[1][3][1]
+        y_start = pitch_width-a_pass[1][3][1]
         if complete:
             successful_passes+=1
             plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='mediumorchid', head_width=1.5, head_length=2, length_includes_head=True)
@@ -67,7 +67,7 @@ def draw_heatmap(game, player):
         heats[x-1:x+2, y-1:y+2] +=1
         heats[x,y] +=1
     # Plot heatmap
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'white')
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'white')
     plt.imshow(np.transpose(heats), cmap='magma')
     fig.patch.set_alpha(0)
     st.pyplot(fig)
@@ -75,8 +75,8 @@ def draw_heatmap(game, player):
     st.divider()
 
 # Variables used throughout the script
-pitch_width = 120
-pitch_height = 80
+pitch_length = 120
+pitch_width = 80
 
 # Main method
 if 'df' in st.session_state:

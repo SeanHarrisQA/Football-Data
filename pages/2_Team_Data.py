@@ -6,8 +6,8 @@ import streamlit as st
 from MyFCPython import createPitchEdit
 
 # Variables used throughout the script
-pitch_width = 120
-pitch_height = 80
+pitch_length = 120
+pitch_width = 80
 
 # Function to calculate the average position of a player from a dataframe
 def calc_avg_pos(df, player):
@@ -29,7 +29,7 @@ def calc_avg_pos(df, player):
 
 @st.cache_data(max_entries=3)
 def draw_average_positions(game, team, home_team, away_team):
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
     fig.patch.set_alpha(0)
 
     if team == 'Both' or team == home_team:
@@ -55,8 +55,8 @@ def draw_average_positions(game, team, home_team, away_team):
         for player in away_players:
             avg_x, avg_y = calc_avg_pos(away_actions, player)
             # Adjust for away team
-            adj_x = pitch_width - avg_x
-            adj_y = pitch_height - avg_y
+            adj_x = pitch_length - avg_x
+            adj_y = pitch_width - avg_y
             player_pos = plt.Circle((adj_x, adj_y), 2, facecolor='blue', edgecolor='white')
             player_pos.set_alpha(.6)
             ax.add_patch(player_pos)
@@ -72,7 +72,7 @@ def draw_average_positions(game, team, home_team, away_team):
 
 @st.cache_data(max_entries=3)
 def draw_shotmap(game, team, home_team, away_team):
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
     fig.patch.set_alpha(0)
     
     shots = game[game.type_name == 'Shot'].set_index('id')
@@ -91,20 +91,20 @@ def draw_shotmap(game, team, home_team, away_team):
 
         if team_name == home_team and team != away_team:
             if goal:
-                shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+                shot_circle = plt.Circle((x, pitch_width-y), circle_size, color='darkorange')
                 shot_circle.set_alpha(.9)
                 ax.add_patch(shot_circle)
             else:
-                shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+                shot_circle = plt.Circle((x, pitch_width-y), circle_size, color='darkorange')
                 shot_circle.set_alpha(.4)
                 ax.add_patch(shot_circle)
         elif team_name == away_team and team != home_team:
             if goal:
-                shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
+                shot_circle = plt.Circle((pitch_length-x, y), circle_size, color='mediumorchid')
                 shot_circle.set_alpha(.9)
                 ax.add_patch(shot_circle)
             else:
-                shot_circle = plt.Circle((pitch_width-x, y), circle_size, color='mediumorchid')
+                shot_circle = plt.Circle((pitch_length-x, y), circle_size, color='mediumorchid')
                 shot_circle.set_alpha(.4)
                 ax.add_patch(shot_circle)
 
@@ -171,7 +171,7 @@ def draw_heatmaps(game, team, home_team, away_team):
         heats[103:121, 51:63] = np.sum(heats[103:121, 51:63])
         heats[103:121, 63:81] = np.sum(heats[103:121, 63:81])
 
-        fig, ax = createPitchEdit(pitch_width, pitch_height, 'yards', 'gray')
+        fig, ax = createPitchEdit(pitch_length, pitch_width, 'yards', 'gray')
         fig.patch.set_alpha(0)
 
         plt.imshow(np.transpose(heats), cmap='magma')
@@ -190,8 +190,8 @@ def draw_heatmaps(game, team, home_team, away_team):
         player_touches = game[bool]
 
         for i, touch in player_touches.iterrows():
-            x = pitch_width - np.round(touch['location'][0]).astype(int)
-            y = pitch_height - np.round(touch['location'][1]).astype(int)
+            x = pitch_length - np.round(touch['location'][0]).astype(int)
+            y = pitch_width - np.round(touch['location'][1]).astype(int)
             heats[x, y] += 9
     
         
@@ -232,7 +232,7 @@ def draw_heatmaps(game, team, home_team, away_team):
         heats[103:121, 51:63] = np.sum(heats[103:121, 51:63])
         heats[103:121, 63:81] = np.sum(heats[103:121, 63:81])
 
-        fig, ax = createPitchEdit(pitch_width, pitch_height, 'yards', 'gray')
+        fig, ax = createPitchEdit(pitch_length, pitch_width, 'yards', 'gray')
         fig.patch.set_alpha(0)
 
         plt.imshow(np.transpose(heats), cmap='magma')
