@@ -144,7 +144,7 @@ def createPitchEdit(length,width, unity,linecolor): # in meters
     
     return fig,ax
 
-def createHalf(length,width, unity,linecolor):
+def createHalf(length, width, unity, linecolor):
     fig=plt.figure()
     ax=fig.add_subplot(1,1,1)
     max_x = width
@@ -183,4 +183,66 @@ def createHalf(length,width, unity,linecolor):
     ax.add_patch(centreSpot)
     plt.axis('off')
 
+    return fig, ax
+
+def create_pitch_scaleable(length, width, linecolor, scale):
+    """
+    creates a plot in which the 'length' is the length of the pitch (goal to goal).
+    And 'width' is the width of the pitch (sideline to sideline).
+    """
+    fig=plt.figure()
+    ax=fig.add_subplot(1,1,1)
+    if length >= 131 or width >= 101:
+        return(str("Field dimensions are too big. Maximum length is 130, maximum width is 100"))
+    
+    width*=scale
+    length*=scale
+    #Pitch Outline & Centre Line
+    plt.plot([0,0],[0,width], color=linecolor)
+    plt.plot([0,length],[width,width], color=linecolor)
+    plt.plot([length,length],[width,0], color=linecolor)
+    plt.plot([length,0],[0,0], color=linecolor)
+    plt.plot([length/2,length/2],[0,width], color=linecolor)
+            
+    #Left Penalty Area
+    plt.plot([18*scale ,18*scale],[(width/2 +22*scale),(width/2-22*scale)],color=linecolor)
+    plt.plot([0,18*scale],[(width/2 +22*scale),(width/2 +22*scale)],color=linecolor)
+    plt.plot([18*scale,0],[(width/2 -22*scale),(width/2 -22*scale)],color=linecolor)
+            
+    #Right Penalty Area
+    plt.plot([(length-18*scale),length],[(width/2 +22*scale),(width/2 +22*scale)],color=linecolor)
+    plt.plot([(length-18*scale), (length-18*scale)],[(width/2 + 22*scale),(width/2-22*scale)],color=linecolor)
+    plt.plot([(length-18*scale),length],[(width/2 - 22*scale),(width/2 -22*scale)],color=linecolor)
+            
+    #Left 6-yard Box
+    plt.plot([0,6*scale],[(width/2+4*scale+6*scale),(width/2+4*scale+6*scale)],color=linecolor)
+    plt.plot([6*scale,6*scale],[(width/2+4*scale+6*scale),(width/2-4*scale-6*scale)],color=linecolor)
+    plt.plot([6*scale,0],[(width/2-4*scale-6*scale),(width/2-4*scale-6*scale)],color=linecolor)
+            
+    #Right 6-yard Box
+    plt.plot([length,length-6*scale],[(width/2+4*scale+6*scale),(width/2+4*scale+6*scale)],color=linecolor)
+    plt.plot([length-6*scale,length-6*scale],[(width/2+4*scale+6*scale),width/2-4*scale-6*scale],color=linecolor)
+    plt.plot([length-6*scale,length],[(width/2-4*scale-6*scale),width/2-4*scale-6*scale],color=linecolor)
+            
+    #Prepare Circles; 10 yards distance. penalty on 12 yards
+    centreCircle = plt.Circle((length/2,width/2), 10*scale, fill=False, color=linecolor)
+    centreSpot = plt.Circle((length/2,width/2),0.8*scale,color=linecolor)
+    leftPenSpot = plt.Circle((12*scale,width/2),0.8*scale,color=linecolor)
+    rightPenSpot = plt.Circle((length-12*scale,width/2),0.8*scale,color=linecolor)
+            
+    #Draw Circles
+    ax.add_patch(centreCircle)
+    ax.add_patch(centreSpot)
+    ax.add_patch(leftPenSpot)
+    ax.add_patch(rightPenSpot)
+            
+    #Prepare Arcs
+    leftArc = Arc((11.5*scale,width/2),height=20*scale,width=20*scale,angle=0,theta1=312,theta2=48,color=linecolor)
+    rightArc = Arc((length-11.5*scale,width/2),height=20*scale,width=20*scale,angle=0,theta1=130,theta2=230,color=linecolor)
+            
+    #Draw Arcs
+    ax.add_patch(leftArc)
+    ax.add_patch(rightArc)
+
+    plt.axis('off')
     return fig, ax

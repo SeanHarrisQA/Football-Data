@@ -5,7 +5,7 @@ import numpy as np
 import json
 from FCPython import createPitch
 import matplotlib.pyplot as plt
-from MyFCPython import createHalf
+from MyFCPython import createHalf, create_pitch_scaleable
 from Statsbomb_Position import Statsbomb_Position
 import math
 from scipy.ndimage.filters import gaussian_filter
@@ -87,7 +87,7 @@ def load_season_actions(local, matches):
     return season_actions
 
 def draw_shotmap(shots):
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
     fig.set_facecolor('black')
 
     for i, shot in shots.iterrows():
@@ -100,11 +100,11 @@ def draw_shotmap(shots):
         circle_size = np.sqrt(shot['shot_statsbomb_xg'] * 15)
 
         if goal:
-            shot_circle = plt.Circle((x, pitch_height-y), circle_size, color='darkorange')
+            shot_circle = plt.Circle((x, pitch_width-y), circle_size, color='darkorange')
             shot_circle.set_alpha(.9)
             ax.add_patch(shot_circle)
         else:
-            shot_circle = plt.Circle((x, pitch_height-y), circle_size, edgecolor='gray')
+            shot_circle = plt.Circle((x, pitch_width-y), circle_size, edgecolor='gray')
             shot_circle.set_alpha(.4)
             ax.add_patch(shot_circle)
 
@@ -116,7 +116,7 @@ def draw_shotmap(shots):
 
 @st.cache_data
 def draw_shotmap_half_pitch(shots):
-    fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = createHalf(pitch_length, pitch_width, 'yards', 'gray')
     fig.patch.set_alpha(0)
 
     total_distance = 0
@@ -153,7 +153,6 @@ def draw_shotmap_half_pitch(shots):
     fig.set_size_inches(10, 7)
     st.pyplot(fig)
 
-
 def draw_heatmap_half_pitch(df):
     # Calculate the touch heatmap for the given player
     heatmap = calculate_action_heatmap(df)
@@ -168,7 +167,7 @@ def draw_heatmap_half_pitch(df):
         for j in range(81):
             adj_heatmap[i, j] = heatmap[80-j, 60-(120-i)]
     # Create half pitch figure
-    fig, ax = createHalf(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = createHalf(pitch_length, pitch_width, 'yards', 'gray')
     fig.patch.set_alpha(0)
     adj_heatmap_f = gaussian_filter(adj_heatmap, sigma=3)
     plt.imshow(adj_heatmap_f, cmap='magma', origin='lower')
@@ -176,31 +175,31 @@ def draw_heatmap_half_pitch(df):
 
 def draw_hres_heatmap(df, s, scale):
     player_actions = df[(df['player_id'] == player_id) & (~df['location'].isna()) & (df['pass_type_name'] != 'Corner')]
-    heatmap = np.zeros((pitch_height * scale + 1, pitch_width * scale + 1), float)
+    heatmap = np.zeros((pitch_width * scale + 1, pitch_length * scale + 1), float)
     nums = []
     for i, action in player_actions.iterrows():
         x = np.round(action['location'][0] * scale).astype(int)
-        y = np.round(action['location'][1] * scale).astype(int)
+        y = pitch_width*scale - np.round(action['location'][1] * scale).astype(int)
         nums.append(x)
         nums.append(y)
-        if y < pitch_height * scale + 1 and x < pitch_width * scale + 1:
+        if y < pitch_width * scale + 1 and x < pitch_length * scale + 1:
             heatmap[y,x] +=1
 
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = create_pitch_scaleable(pitch_length, pitch_width, 'gray', scale)
+    # fig, ax = plt.subplots(figsize=(12, 8))
     fig.patch.set_alpha(0)
     heatmap=gaussian_filter(heatmap, sigma=s)
-    sns.heatmap(data=heatmap, ax=ax, cmap='magma', cbar=False)
-    my_levels = np.arange(0.1, 1, 0.1).tolist()
-    st.write(my_levels)
-    ax.contour(np.arange(.5, heatmap.shape[1]), np.arange(.5, heatmap.shape[0]), heatmap, colors='violet', levels=my_levels)
-    plt.tick_params(left = False, bottom = False)
-    plt.xticks([])
-    plt.yticks([])
-    ax.tick_params(left = False, bottom = False)
+    # sns.heatmap(data=heatmap, ax=ax, cmap='magma', cbar=False)
+    plt.imshow(heatmap, cmap='magma', origin='lower')
+    # my_levels = np.arange(.2, 1, 0.2).tolist()
+    # st.write(my_levels)
+    # ax.contour(np.arange(.5, heatmap.shape[1]), np.arange(.5, heatmap.shape[0]), heatmap, colors='violet', levels=my_levels)
+    # plt.tick_params(left = False, bottom = False)
+    # plt.xticks([])
+    # plt.yticks([])
+    # ax.tick_params(left = False, bottom = False)
     # plt.imshow(heatmap, cmap='magma')
     st.pyplot(fig)
-
 
 def calculate_action_heatmap(df):
     # Only use the actions where the player has the ball
@@ -210,7 +209,7 @@ def calculate_action_heatmap(df):
     heatmap = np.zeros((81,121), float)
     for i, action in player_actions.iterrows():
         x = np.round(action['location'][0]).astype(int)
-        y = pitch_height - np.round(action['location'][1]).astype(int)
+        y = pitch_width - np.round(action['location'][1]).astype(int)
         if y < 81 and x < 121:
             heatmap[y,x] +=1
             # circ = plt.Circle((x, y), .5, color='mediumorchid')
@@ -247,7 +246,7 @@ def calculate_most_common_positions(games):
 def draw_positions_by_minutes(positions):
     statsbomb_positions = get_all_statsbomb_positions()
 
-    fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
     fig.patch.set_alpha(0)
 
     viridis = mpl.colormaps['plasma'].resampled(8)
@@ -306,8 +305,8 @@ def get_all_statsbomb_positions():
 st.title('Player Biography')
 
 filepath = '../../Python Learning/open-data/data/'
-pitch_width = 120
-pitch_height = 80
+pitch_length = 120
+pitch_width = 80
 
 player_id = 5503
 
@@ -387,4 +386,4 @@ with col2:
 draw_heatmap_half_pitch(season_actions)
 
 # sigma = st.slider('How old are you?', 0, 30)
-draw_hres_heatmap(season_actions, 9, 3)
+draw_hres_heatmap(season_actions, 21, 7)
