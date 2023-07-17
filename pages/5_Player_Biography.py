@@ -325,48 +325,75 @@ def draw_passing_sonar(game, player):
     bool = (game['player_id'] == player) & (game['type_name'] == 'Pass')
     passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
     passes.reset_index(drop=True, inplace=True)
-    directions = np.zeros(shape=(2, 16), dtype=np.uint16)
+    directions = np.zeros(shape=(3, 16), dtype=float)
     divisor = (2*np.pi) / 16
     for i, a_pass in passes.iterrows():
         angle = a_pass['pass_angle']
         completed = math.isnan(a_pass['pass_outcome_id'])# or a_pass['pass_outcome_id'] == 76
+        distance = a_pass['pass_length']
         if abs(angle) < np.pi:
             direction_index = np.round((angle // divisor) + 8).astype(int)
             directions[0, direction_index] += 1
+            directions[2, direction_index] = (distance + (directions[2, direction_index] * (directions[0, direction_index]-1))) / directions[0, direction_index]
             if completed:
                 directions[1, direction_index] += 1
 
-
+    st.dataframe(directions)
+    for i in range(len(directions)):
+        directions[i] = directions[i][::-1]
+    st.dataframe(directions)
     # Normalise the values in the directions chart so that they cqn be plotted simply
     max_no_of_passes = max(directions[0])
     def normalise_helper(num):
         return num / max_no_of_passes
     normalise = np.vectorize(normalise_helper)
-    directions_normalised = normalise(directions)
-    st.write(directions_normalised)
+    directions_normalised = normalise(directions[:2])
 
     # Now draw the piechart, three seperate piecharts need to be created, one invisible chart so that wedges can have dirrent radii
     data = [1 for x in range(16)]
-    fig, ax = plt.subplots(figsize=(6,6))
+    fig, ax = plt.subplots(figsize=(6, 6))
     fig.patch.set_alpha(0)
 
+    hold = [0 for x in range(16)]
+    cbar = plt.colorbar(ax.scatter(x=hold, y=hold, c=directions[2], cmap='magma'), shrink=0.5, anchor=(-0.5, 0.5))
+    cbar_ticks =plt.getp(cbar.ax.axes, 'yticklabels')
+    plt.getp(cbar.ax.axes)
+    plt.setp(cbar_ticks, color='white')
+    cbar_lines =plt.getp(cbar.ax.axes, 'yticklines')
+    plt.setp(cbar_lines, color='white')
+    # Define colourmap for plotting the passing distances
+    magma_colourmap = mpl.colormaps['magma'].resampled(8)
+    d_cmap_v = calculate_cmap_values(directions[2])
 
+    # st.write('Max avg _distance:', max_avg_distance)
+    sa = (360 * 5) / len(data)
     for i in range(16):
-        outer_wedges, texts = ax.pie(data, radius=directions_normalised[0, i])
-        inner_wedges, texts_1 = ax.pie(data, radius=directions_normalised[1, i])
+        outer_wedges, texts = ax.pie(data, radius=max(0.05, directions_normalised[0, i]), startangle=-90)
+        inner_wedges, texts_1 = ax.pie(data, radius=max(0.05, directions_normalised[1, i]), startangle=-90)
+        c = magma_colourmap(d_cmap_v[i])
         for j in range(16):
             outer_wedges[j].set_visible(False)
             inner_wedges[j].set_visible(False)
         outer_wedges[i].set_visible(True)
         outer_wedges[i].set_color('gray')
-        outer_wedges[i].set_edgecolor('black')
+        outer_wedges[i].set_edgecolor('white')
         inner_wedges[i].set_visible(True)
-        inner_wedges[i].set_color('blue')
-        inner_wedges[i].set_edgecolor('black')
-
-
+        inner_wedges[i].set_color(c)
+        inner_wedges[i].set_edgecolor('white')
+    # ax.scatter(x=data, y=data, c=directions[2], cmap='magma')
+    # ax.set_title("Matplotlib bakery: A pie", c='w', loc='left', pad=-30)
+    plt.text(-1,1, 'Player passes in season ' + str(season), c='w')
+    # plt.savefig('image.png', bbox_inches='tight', pad_inches=0)
+    
     st.pyplot(fig)
-    st.write(directions)
+
+
+def calculate_cmap_values(arr):
+    mn = min(arr) - 2
+    mx = max(arr)
+    diff = mx-mn
+    values = [(x - mn) / diff for x in arr]
+    return values
 
 st.title('Player Biography')
 
@@ -375,6 +402,7 @@ pitch_length = 120
 pitch_width = 80
 
 player_id = 5503
+# vv =20176, messi = 5503
 
 # main script
 all_competitions = load_competitions(True)
@@ -444,11 +472,7 @@ with col2:
         autotext.set_color('white')
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
-    st.text(" ")
-    st.text(" ")
-    st.text(" ")
-    st.text(" ")
-    st.text(" ")
+    draw_passing_sonar(season_actions, player_id)
     draw_heatmap_half_pitch(season_actions)
 
 # calculate_most_common_positions(all_matches)
@@ -457,5 +481,3 @@ with col2:
 # Season heatmap
 # st.dataframe(season_actions)
 # st.write(season_actions['type_name'].unique())
-
-draw_passing_sonar(season_actions, player_id)

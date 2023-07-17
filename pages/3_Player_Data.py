@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from FCPython import createPitch
 import streamlit as st
 import math
+import matplotlib as mpl
 
 # @st.cache_data(max_entries=20)
 def draw_passmap(game, player, values):
@@ -81,7 +82,6 @@ def draw_simple_sonar(game, player):
     passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
     passes.reset_index(drop=True, inplace=True)
     # passes = passes.loc[:10]
-    st.dataframe(passes)
     for i, a_pass in passes.iterrows():
         angle = a_pass['pass_angle']
         x_end = a_pass['pass_end_location'][0] + (60 - a_pass['location'][0])
@@ -93,6 +93,77 @@ def draw_simple_sonar(game, player):
         else:
             plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='blue', head_width=1.5, head_length=2, length_includes_head=True)    
     st.pyplot(fig)
+
+def draw_passing_sonar(game, player):
+    bool = (game['player_name'] == player) & (game['type_name'] == 'Pass')
+    passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
+    passes.reset_index(drop=True, inplace=True)
+    directions = np.zeros(shape=(3, 16), dtype=float)
+    divisor = (2*np.pi) / 16
+    for i, a_pass in passes.iterrows():
+        angle = a_pass['pass_angle']
+        completed = math.isnan(a_pass['pass_outcome_id'])# or a_pass['pass_outcome_id'] == 76
+        distance = a_pass['pass_length']
+        if abs(angle) < np.pi:
+            direction_index = np.round((angle // divisor) + 8).astype(int)
+            directions[0, direction_index] += 1
+            directions[2, direction_index] = (distance + (directions[2, direction_index] * (directions[0, direction_index]-1))) / directions[0, direction_index]
+            if completed:
+                directions[1, direction_index] += 1
+
+    for i in range(len(directions)):
+        directions[i] = directions[i][::-1]
+
+    # Normalise the values in the directions chart so that they cqn be plotted simply
+    max_no_of_passes = max(directions[0])
+    def normalise_helper(num):
+        return num / max_no_of_passes
+    normalise = np.vectorize(normalise_helper)
+    directions_normalised = normalise(directions[:2])
+
+    # Now draw the piechart, three seperate piecharts need to be created, one invisible chart so that wedges can have dirrent radii
+    data = [1 for x in range(16)]
+    fig, ax = plt.subplots(figsize=(6, 6))
+    fig.patch.set_alpha(0)
+
+    # hold = [0 for x in range(16)]
+    # cbar = plt.colorbar(ax.scatter(x=hold, y=hold, c=directions[2], cmap='magma'), shrink=0.5, anchor=(-0.5, 0.5))
+    # cbar_ticks =plt.getp(cbar.ax.axes, 'yticklabels')
+    # plt.getp(cbar.ax.axes)
+    # plt.setp(cbar_ticks, color='white')
+    # cbar_lines =plt.getp(cbar.ax.axes, 'yticklines')
+    # plt.setp(cbar_lines, color='white')
+    # Define colourmap for plotting the passing distances
+    magma_colourmap = mpl.colormaps['magma'].resampled(8)
+    d_cmap_v = calculate_cmap_values(directions[2])
+
+    # st.write('Max avg _distance:', max_avg_distance)
+    sa = (360 * 5) / len(data)
+    for i in range(16):
+        outer_wedges, texts = ax.pie(data, radius=max(0.05, directions_normalised[0, i]), startangle=-90)
+        inner_wedges, texts_1 = ax.pie(data, radius=max(0.05, directions_normalised[0, i]), startangle=-90)
+        c = magma_colourmap(d_cmap_v[i])
+        for j in range(16):
+            outer_wedges[j].set_visible(False)
+            inner_wedges[j].set_visible(False)
+        outer_wedges[i].set_visible(True)
+        outer_wedges[i].set_color('gray')
+        outer_wedges[i].set_edgecolor('white')
+        inner_wedges[i].set_visible(True)
+        inner_wedges[i].set_color(c)
+        inner_wedges[i].set_edgecolor('white')
+    # ax.scatter(x=data, y=data, c=directions[2], cmap='magma')
+    # ax.set_title("Matplotlib bakery: A pie", c='w', loc='left', pad=-30)
+    # plt.savefig('image.png', bbox_inches='tight', pad_inches=0)
+    
+    st.pyplot(fig)
+
+def calculate_cmap_values(arr):
+    mn = min(arr) - 2
+    mx = max(arr)
+    diff = mx-mn
+    values = [(x - mn) / diff for x in arr]
+    return values
 
 # Variables used throughout the script
 pitch_length = 120
@@ -118,6 +189,7 @@ values = st.slider(
     0, 100, (0, 100))
 st.write('Values:', values)
 
+draw_passing_sonar(game, selected_player)
 draw_simple_sonar(game, selected_player)
 draw_passmap(game, selected_player, values)
 draw_heatmap(game, selected_player)
