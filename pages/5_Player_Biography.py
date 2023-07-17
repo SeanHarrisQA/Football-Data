@@ -302,6 +302,72 @@ def get_all_statsbomb_positions():
     statsbomb_positions.append(Statsbomb_Position('SS', [x[5], y[2]]))
     return statsbomb_positions
 
+def draw_simple_sonar(game, player):
+    fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
+    fig.patch.set_alpha(0)
+    bool = (game['player_id'] == player) & (game['type_name'] == 'Pass')
+    passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
+    passes.reset_index(drop=True, inplace=True)
+    # passes = passes.loc[:10]
+    for i, a_pass in passes.iterrows():
+        angle = a_pass['pass_angle']
+        x_end = a_pass['pass_end_location'][0] + (60 - a_pass['location'][0])
+        y_end = pitch_width - (a_pass['pass_end_location'][1] + (40 - a_pass['location'][1]))
+        x_start = a_pass['location'][0] + (60 - a_pass['location'][0])
+        y_start = pitch_width - (a_pass['location'][1] + (40 - a_pass['location'][1]))
+        if angle > 0:
+            plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='yellow', head_width=1.5, head_length=2, length_includes_head=True)
+        else:
+            plt.arrow(x_start, y_start, x_end-x_start, y_end - y_start, color='blue', head_width=1.5, head_length=2, length_includes_head=True)    
+    st.pyplot(fig)
+
+def draw_passing_sonar(game, player):
+    bool = (game['player_id'] == player) & (game['type_name'] == 'Pass')
+    passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
+    passes.reset_index(drop=True, inplace=True)
+    directions = np.zeros(shape=(2, 16), dtype=np.uint16)
+    divisor = (2*np.pi) / 16
+    for i, a_pass in passes.iterrows():
+        angle = a_pass['pass_angle']
+        completed = math.isnan(a_pass['pass_outcome_id'])# or a_pass['pass_outcome_id'] == 76
+        if abs(angle) < np.pi:
+            direction_index = np.round((angle // divisor) + 8).astype(int)
+            directions[0, direction_index] += 1
+            if completed:
+                directions[1, direction_index] += 1
+
+
+    # Normalise the values in the directions chart so that they cqn be plotted simply
+    max_no_of_passes = max(directions[0])
+    def normalise_helper(num):
+        return num / max_no_of_passes
+    normalise = np.vectorize(normalise_helper)
+    directions_normalised = normalise(directions)
+    st.write(directions_normalised)
+
+    # Now draw the piechart, three seperate piecharts need to be created, one invisible chart so that wedges can have dirrent radii
+    data = [1 for x in range(16)]
+    fig, ax = plt.subplots(figsize=(6,6))
+    fig.patch.set_alpha(0)
+
+
+    for i in range(16):
+        outer_wedges, texts = ax.pie(data, radius=directions_normalised[0, i])
+        inner_wedges, texts_1 = ax.pie(data, radius=directions_normalised[1, i])
+        for j in range(16):
+            outer_wedges[j].set_visible(False)
+            inner_wedges[j].set_visible(False)
+        outer_wedges[i].set_visible(True)
+        outer_wedges[i].set_color('gray')
+        outer_wedges[i].set_edgecolor('black')
+        inner_wedges[i].set_visible(True)
+        inner_wedges[i].set_color('blue')
+        inner_wedges[i].set_edgecolor('black')
+
+
+    st.pyplot(fig)
+    st.write(directions)
+
 st.title('Player Biography')
 
 filepath = '../../Python Learning/open-data/data/'
@@ -329,6 +395,7 @@ season_actions = load_season_actions(True, all_matches)
 bool = (season_actions['player_id'] == player_id) & (season_actions['type_name'] == 'Shot') & (season_actions['shot_type_id'] != 88)
 season_shots = season_actions[bool]
 
+draw_simple_sonar(season_actions, player_id)
 # Shot graphics for season
 st.subheader("Lionel Messi non-penalty shots " + str(season))
 col1, col2 = st.columns([3, 2])
@@ -391,3 +458,4 @@ with col2:
 # st.dataframe(season_actions)
 # st.write(season_actions['type_name'].unique())
 
+draw_passing_sonar(season_actions, player_id)
