@@ -111,9 +111,6 @@ def draw_passing_sonar(game, player):
             if completed:
                 directions[1, direction_index] += 1
 
-    for i in range(len(directions)):
-        directions[i] = directions[i][::-1]
-
     # Normalise the values in the directions chart so that they cqn be plotted simply
     max_no_of_passes = max(directions[0])
     def normalise_helper(num):
@@ -189,7 +186,7 @@ values = st.slider(
     0, 100, (0, 100))
 st.write('Values:', values)
 
-draw_passing_sonar(game, selected_player)
-draw_simple_sonar(game, selected_player)
+# draw_passing_sonar(game, selected_player)
+# draw_simple_sonar(game, selected_player)
 draw_passmap(game, selected_player, values)
 draw_heatmap(game, selected_player)

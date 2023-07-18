@@ -338,10 +338,9 @@ def draw_passing_sonar(game, player):
             if completed:
                 directions[1, direction_index] += 1
 
-    st.dataframe(directions)
     for i in range(len(directions)):
         directions[i] = directions[i][::-1]
-    st.dataframe(directions)
+
     # Normalise the values in the directions chart so that they cqn be plotted simply
     max_no_of_passes = max(directions[0])
     def normalise_helper(num):
@@ -351,16 +350,23 @@ def draw_passing_sonar(game, player):
 
     # Now draw the piechart, three seperate piecharts need to be created, one invisible chart so that wedges can have dirrent radii
     data = [1 for x in range(16)]
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots()
     fig.patch.set_alpha(0)
 
     hold = [0 for x in range(16)]
-    cbar = plt.colorbar(ax.scatter(x=hold, y=hold, c=directions[2], cmap='magma'), shrink=0.5, anchor=(-0.5, 0.5))
+    # cbar = plt.colorbar(ax.scatter(x=hold, y=hold, c=directions[2], cmap='magma'), shrink=0.5, location='bottom', anchor=(.5,3))
+    cbar = plt.colorbar(ax.scatter(x=hold, y=hold, c=directions[2], cmap='magma'), shrink=0.5, location='right', anchor=(-1.5,.5))
     cbar_ticks =plt.getp(cbar.ax.axes, 'yticklabels')
     plt.getp(cbar.ax.axes)
     plt.setp(cbar_ticks, color='white')
+    cbar.outline.set_color('white')
+    cbar.dividers.set_color('white')
+    
     cbar_lines =plt.getp(cbar.ax.axes, 'yticklines')
     plt.setp(cbar_lines, color='white')
+    fig.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+    ax.axis('equal')
+    ax.margins(0, 0)
     # Define colourmap for plotting the passing distances
     magma_colourmap = mpl.colormaps['magma'].resampled(8)
     d_cmap_v = calculate_cmap_values(directions[2])
@@ -380,12 +386,9 @@ def draw_passing_sonar(game, player):
         inner_wedges[i].set_visible(True)
         inner_wedges[i].set_color(c)
         inner_wedges[i].set_edgecolor('white')
-    # ax.scatter(x=data, y=data, c=directions[2], cmap='magma')
-    # ax.set_title("Matplotlib bakery: A pie", c='w', loc='left', pad=-30)
-    plt.text(-1,1, 'Player passes in season ' + str(season), c='w')
-    # plt.savefig('image.png', bbox_inches='tight', pad_inches=0)
-    
-    st.pyplot(fig)
+    # plt.text(-1,1, 'Player passes in season ' + str(season), c='w')
+    ax.axis('equal')
+    st.pyplot(fig, bbox_inches='tight', pad_inches=0)
 
 
 def calculate_cmap_values(arr):
@@ -423,13 +426,11 @@ season_actions = load_season_actions(True, all_matches)
 bool = (season_actions['player_id'] == player_id) & (season_actions['type_name'] == 'Shot') & (season_actions['shot_type_id'] != 88)
 season_shots = season_actions[bool]
 
-draw_simple_sonar(season_actions, player_id)
 # Shot graphics for season
 st.subheader("Lionel Messi non-penalty shots " + str(season))
 col1, col2 = st.columns([3, 2])
 with col1:
     draw_shotmap_half_pitch(season_shots)
-    draw_hres_heatmap(season_actions, 6, 2)
 with col2:
     goals = len(season_shots[season_shots['shot_outcome_name'] == 'Goal'])
     shots = len(season_shots)
@@ -472,10 +473,21 @@ with col2:
         autotext.set_color('white')
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
-    draw_passing_sonar(season_actions, player_id)
-    draw_heatmap_half_pitch(season_actions)
+    
 
-# calculate_most_common_positions(all_matches)
+col3, col4 = st.columns([3, 2])
+
+with col3:
+    st.subheader('Heatmap')
+    draw_hres_heatmap(season_actions, 6, 2)
+    st.subheader('Passing Sonar')
+    draw_passing_sonar(season_actions, player_id)
+with col4:
+    st.subheader('Attacking heatmap')
+    draw_heatmap_half_pitch(season_actions)
+    st.subheader('Percentage of minutes per position')
+    calculate_most_common_positions(all_matches)
+
 
 
 # Season heatmap
