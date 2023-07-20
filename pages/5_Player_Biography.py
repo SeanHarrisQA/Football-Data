@@ -14,6 +14,7 @@ import seaborn as sns
 import matplotlib as mpl
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 # 
+import heapq
 
 st.set_page_config(layout="wide")
 st.markdown("""
@@ -257,9 +258,19 @@ def draw_positions_by_minutes(positions):
     for i in range(len(positions)):
        position_strings[i] = str(np.round((positions[i] / total_minutes) * 100, 2)) + '%'
        positions[i] = positions[i] / total_minutes
-    m = max(positions)
+    # Iterate through positions to find the three largest and their indicies using a heap
+    heap = []
     for i in range(len(positions)):
-       positions[i] /= m
+        element = [positions[i], i]
+        if len(heap) < 3:
+            heapq.heappush(heap, element)
+        else:
+            if element > heap[0]:
+                heapq.heappop(heap)
+                heapq.heappush(heap, element)
+    for element in heap[::-1]:
+        st.text(statsbomb_positions[element[1]].abbrv + ' ' + position_strings[element[1]])
+
     for i in range(1, len(statsbomb_positions)):
         x = statsbomb_positions[i].location[0]
         y = statsbomb_positions[i].location[1]
@@ -386,10 +397,10 @@ def draw_passing_sonar(game, player):
         inner_wedges[i].set_visible(True)
         inner_wedges[i].set_color(c)
         inner_wedges[i].set_edgecolor('white')
-    # plt.text(-1,1, 'Player passes in season ' + str(season), c='w')
+    plt.text(-1.1,0, 'Direction of attack -->', c='w', rotation='vertical', va='center')
     ax.axis('equal')
     st.pyplot(fig, bbox_inches='tight', pad_inches=0)
-
+    st.caption('The radius of each segment shows the volume of passes made in that direction. The ratio of the grey segment of the radius to the coloured segment shows the proportion of unsuccessful to successful passes. The colour of the segments shows the average distance of the pass in yards')
 
 def calculate_cmap_values(arr):
     mn = min(arr) - 2
@@ -473,7 +484,6 @@ with col2:
         autotext.set_color('white')
     ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
     st.pyplot(fig1)
-    
 
 col3, col4 = st.columns([3, 2])
 
