@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 import json
+import math
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from seaborn import load_dataset
 from sklearn.compose import make_column_transformer
@@ -10,6 +12,7 @@ from sklearn.model_selection import train_test_split
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
 from sklearn import metrics
+from sklearn.tree import DecisionTreeRegressor
 
 st.title('Machine Learning - Estimating expected goals')
 
@@ -77,7 +80,7 @@ all_shots = all_shots[['play_pattern_name', 'shot_freeze_frame', 'location', 'sh
 # modify data in all shots
 # isolate x coordinate so we can process it
 def get_x(point):
-    return point[0]
+    return 120 - point[0]
 all_shots['x_location'] = all_shots['location'].apply(get_x)
 # isolate y coordinate so we can process it
 def get_y(point):
@@ -109,7 +112,6 @@ transformer = make_column_transformer(
     remainder='passthrough')
 transformed = transformer.fit_transform(all_shots)
 transformed_df = pd.DataFrame(transformed, columns=transformer.get_feature_names_out())
-st.write(transformed_df.head())
 
 # clean columns
 current_names = transformed_df.columns
@@ -186,6 +188,7 @@ st.pyplot(sns.pairplot(non_categorical_df))
 ###############################################################################
 # 3 - Training ################################################################
 
+st.write('Training the model')
 X = non_categorical_df.drop(['shot statsbomb xg'], axis=1)
 y = non_categorical_df['shot statsbomb xg']
 
@@ -197,20 +200,34 @@ model.fit(X_train, y_train)
 
 st.write(pd.DataFrame(model.coef_, X.columns, columns = ['Coeff']))
 
-predictions = model.predict(X_test)
+y_hat = model.predict(X_test)
+
+error = y_test - y_hat
 
 fig, ax = plt.subplots()
 plt.plot([0,1], linestyle='dotted', color='black')
-plt.scatter(y_test, predictions)
+plt.scatter(y_test, y_hat)
 st.pyplot(fig)
+
+test_vs_hat = pd.DataFrame()
+
+test_vs_hat['Actual Values'] = y_test
+test_vs_hat['Predicted Values'] = y_hat
+test_vs_hat['Absolute Error'] = abs(test_vs_hat['Actual Values'] - test_vs_hat['Predicted Values'])
+st.dataframe(test_vs_hat)
 
 ###############################################################################
 # 4 - Evaluation ##############################################################
 
 st.write('MAE')
-st.write(metrics.mean_absolute_error(y_test, predictions))
+st.write(metrics.mean_absolute_error(y_test, y_hat))
 st.write('MSE not appropriate for this scenario')
-st.write(metrics.mean_squared_error(y_test, predictions))
+st.write(metrics.mean_squared_error(y_test, y_hat))
+
+fig, ax = plt.subplots()
+ax.hist(error)
+ax.set_xlabel('Error')
+st.pyplot(fig)
 
 ###############################################################################
 # 5 - 2nd Attempt #############################################################
@@ -220,11 +237,11 @@ st.write(metrics.mean_squared_error(y_test, predictions))
 st.subheader("Refining the model")
 all_shots
 focused_df = all_shots.drop(['play_pattern_name', 'shot_technique_name', 'shot_body_part_name'], axis=1)
-categorical_columns = ['shot_type_name']
+categorical_columns = ['shot_type_name', 'shot_first_time']
 transformer = make_column_transformer(
     (OneHotEncoder(), categorical_columns),
     remainder='passthrough')
-transformed = transformer.fit_transform(all_shots)
+transformed = transformer.fit_transform(focused_df)
 transformed_df = pd.DataFrame(transformed, columns=transformer.get_feature_names_out())
 st.write(transformed_df.head())
 
@@ -241,14 +258,16 @@ st.write(transformed_df.head())
 # 5 2 Feature selection #######################################################
 
 st.write('Correlation')
+transformed_df['y location'] = abs(40 - transformed_df['y location'])
 X = transformed_df.drop(['shot statsbomb xg'], axis=1)
 y = transformed_df['shot statsbomb xg']
 
+
 f_selector = SelectKBest(score_func=f_regression, k='all')
 f_selector.fit(X,y)
 X_fs = f_selector.transform(X)
 
-fig, ax =plt.subplots()
+fig, ax = plt.subplots()
 ax.bar([i for i in range(len(f_selector.scores_))], f_selector.scores_)
 plt.xlabel("Features")
 plt.xticks(ticks=range(len(X.columns)), labels=X.columns, rotation=90)
@@ -259,52 +278,26 @@ f_selector = SelectKBest(score_func=mutual_info_regression, k='all')
 f_selector.fit(X,y)
 X_fs = f_selector.transform(X)
 
-fig, ax =plt.subplots()
+fig, ax = plt.subplots()
 ax.bar([i for i in range(len(f_selector.scores_))], f_selector.scores_)
 plt.xlabel("Features")
 plt.xticks(ticks=range(len(X.columns)), labels=X.columns, rotation=90)
 plt.ylabel("Estimated MI Values")
 st.pyplot(fig)
 
-# Take a look at different values
-X['y location'] = abs(40 - X['y location'])
-transformed_df['y location'] = abs(40 - transformed_df['y location'])
-st.write(X.head())
-st.write(X.describe())
+st.pyplot(sns.pairplot(transformed_df[['x location', 'y location', 'opposition involved', 'shot statsbomb xg']]))
 
-st.subheader('Repeat Experiment')
-st.write('Correlation')
+# ###############################################################################
+# # 5 3 Training ################################################################
 
-f_selector = SelectKBest(score_func=f_regression, k='all')
-f_selector.fit(X,y)
-X_fs = f_selector.transform(X)
+X = transformed_df.drop(['shot statsbomb xg'], axis=1)
+y = transformed_df['shot statsbomb xg']
 
-fig, ax =plt.subplots()
-ax.bar([i for i in range(len(f_selector.scores_))], f_selector.scores_)
-plt.xlabel("Features")
-plt.xticks(ticks=range(len(X.columns)), labels=X.columns, rotation=90)
-plt.ylabel("F-value (transformed from the correlation values)")
-st.pyplot(fig)
-
-f_selector = SelectKBest(score_func=mutual_info_regression, k='all')
-f_selector.fit(X,y)
-X_fs = f_selector.transform(X)
-
-fig, ax =plt.subplots()
-ax.bar([i for i in range(len(f_selector.scores_))], f_selector.scores_)
-plt.xlabel("Features")
-plt.xticks(ticks=range(len(X.columns)), labels=X.columns, rotation=90)
-plt.ylabel("Estimated MI Values")
-st.pyplot(fig)
-
-non_categorical_df = transformed_df[['x location', 'y location', 'opposition involved', 'shot statsbomb xg']]
-st.pyplot(sns.pairplot(non_categorical_df))
-
-###############################################################################
-# 5 3 Training ################################################################
-
-X = non_categorical_df.drop(['shot statsbomb xg'], axis=1)
-y = non_categorical_df['shot statsbomb xg']
+#################
+# Saved for later
+X_best = X
+y_best = y
+#################
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state=41)
 
@@ -314,21 +307,107 @@ model.fit(X_train, y_train)
 
 st.write(pd.DataFrame(model.coef_, X.columns, columns = ['Coeff']))
 
-predictions = model.predict(X_test)
+y_hat = model.predict(X_test)
 
 fig, ax = plt.subplots()
 plt.plot([0,1], linestyle='dotted', color='black')
-plt.scatter(y_test, predictions)
+plt.scatter(y_test, y_hat)
 st.pyplot(fig)
 
-###############################################################################
-# 5 4 Evaluation ##############################################################
+#################################################################################
+# # 5 4 Evaluation ##############################################################
 
 st.write('MAE')
-st.write(metrics.mean_absolute_error(y_test, predictions))
+st.write(metrics.mean_absolute_error(y_test, y_hat))
 st.write('MSE not appropriate for this scenario')
-st.write(metrics.mean_squared_error(y_test, predictions))
+st.write(metrics.mean_squared_error(y_test, y_hat))
 
+#################################################################################
 
+st.subheader('Adding distance and angle')
 
+distance = pd.Series(np.zeros(len(transformed_df)))
+angle = pd.Series(np.zeros(len(transformed_df)))
 
+for i, shot in transformed_df.iterrows():
+    distance.iloc[i] = np.sqrt(shot['x location']**2 + shot['y location']**2)
+    angle.iloc[i] = math.degrees(math.atan(shot['x location'] / shot['y location']))
+
+df_plus_angle_distance = transformed_df
+df_plus_angle_distance['distance'] = distance
+df_plus_angle_distance['angle'] = angle
+
+st.dataframe(df_plus_angle_distance)
+
+non_categorical_df = transformed_df[['x location', 'y location', 'opposition involved', 'shot statsbomb xg', 'distance', 'angle']]
+st.pyplot(sns.pairplot(non_categorical_df))
+
+# X = df_plus_angle_distance.drop(['shot statsbomb xg', 'angle', 'x location', 'y location'], axis=1)
+X = df_plus_angle_distance[['opposition involved', 'x location', 'y location']]
+y = df_plus_angle_distance['shot statsbomb xg']
+
+f_selector = SelectKBest(score_func=f_regression, k='all')
+f_selector.fit(X,y)
+X_fs = f_selector.transform(X)
+
+fig, ax =plt.subplots()
+ax.bar([i for i in range(len(f_selector.scores_))], f_selector.scores_)
+plt.xlabel("Features")
+plt.xticks(ticks=range(len(X.columns)), labels=X.columns, rotation=90)
+plt.ylabel("F-value (transformed from the correlation values)")
+st.pyplot(fig)
+
+f_selector = SelectKBest(score_func=mutual_info_regression, k='all')
+f_selector.fit(X,y)
+X_fs = f_selector.transform(X)
+
+fig, ax =plt.subplots()
+ax.bar([i for i in range(len(f_selector.scores_))], f_selector.scores_)
+plt.xlabel("Features")
+plt.xticks(ticks=range(len(X.columns)), labels=X.columns, rotation=90)
+plt.ylabel("Estimated MI Values")
+st.pyplot(fig)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state=41)
+
+model = LinearRegression()
+
+model.fit(X_train, y_train)
+
+st.write(pd.DataFrame(model.coef_, X.columns, columns = ['Coeff']))
+
+y_hat = model.predict(X_test)
+
+fig, ax = plt.subplots()
+plt.plot([0,1], linestyle='dotted', color='black')
+plt.scatter(y_test, y_hat)
+st.pyplot(fig)
+
+st.write('MAE')
+st.write(metrics.mean_absolute_error(y_test, y_hat))
+st.write('MSE not appropriate for this scenario')
+st.write(metrics.mean_squared_error(y_test, y_hat))
+
+#################################################################################
+
+st.subheader('Decision Tree')
+
+X = X_best
+y = y_best
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=41)
+
+dtree_regressor = DecisionTreeRegressor()
+dtree_regressor.fit(X_train, y_train)
+
+y_pred = dtree_regressor.predict(X_test)
+
+fig, ax = plt.subplots()
+plt.plot([0,1], linestyle='dotted', color='black')
+plt.scatter(y_test, y_pred)
+st.pyplot(fig)
+
+st.write('MAE')
+st.write(metrics.mean_absolute_error(y_test, y_hat))
+st.write('MSE not appropriate for this scenario')
+st.write(metrics.mean_squared_error(y_test, y_hat))
