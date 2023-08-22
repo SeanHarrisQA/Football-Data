@@ -67,10 +67,33 @@ if st.sidebar.button('Load match') or 'df' not in st.session_state:
     st.session_state.away = away
     st.session_state.lineups = load_lineup_data(match_id)
     st.session_state.scoreline = scoreline
+
     
-st.subheader('More match data to go here')
-st.write(st.session_state.scoreline)
-for lineup in st.session_state.lineups:
-    st.dataframe(lineup)
-st.dataframe(st.session_state.df)
-st.write(st.session_state.df.columns)
+# st.subheader('More match data to go here')
+st.subheader(st.session_state.scoreline)
+# for lineup in st.session_state.lineups:
+#     st.dataframe(lineup)
+# st.dataframe(st.session_state.df)
+# st.write(st.session_state.df.columns)
+lineup_0, lineup_1 = st.session_state.lineups
+
+# Expander to make viewing the teamsheets optional
+
+col1, col2 = st.columns(2)
+with col1:
+    st.subheader('Home')
+    for i, player in lineup_0.iterrows():
+        if len(player['positions']) > 0:
+            initial = ''
+            for letter in player['player_name'].split(' '):
+                initial += letter[0]
+            st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
+
+with col2:
+    st.subheader('Away')
+    for i, player in lineup_1.iterrows():
+        if len(player['positions']) > 0:
+            initial = ''
+            for letter in player['player_name'].split(' '):
+                initial += letter[0]
+            st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)

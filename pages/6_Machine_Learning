@@ -408,6 +408,6 @@ plt.scatter(y_test, y_pred)
 st.pyplot(fig)
 
 st.write('MAE')
-st.write(metrics.mean_absolute_error(y_test, y_hat))
+st.write(metrics.mean_absolute_error(y_test, y_pred))
 st.write('MSE not appropriate for this scenario')
-st.write(metrics.mean_squared_error(y_test, y_hat))
+st.write(metrics.mean_squared_error(y_test, y_pred))

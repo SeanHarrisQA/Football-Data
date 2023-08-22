@@ -184,7 +184,6 @@ st.divider()
 values = st.slider(
     'Select a range of values',
     0, 100, (0, 100))
-st.write('Values:', values)
 
 # draw_passing_sonar(game, selected_player)
 # draw_simple_sonar(game, selected_player)

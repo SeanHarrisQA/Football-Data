@@ -15,6 +15,8 @@ import matplotlib as mpl
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 # 
 import heapq
+import matplotlib.pylab as pl
+from matplotlib.colors import ListedColormap
 
 st.set_page_config(layout="wide")
 st.markdown("""
@@ -140,8 +142,8 @@ def draw_shotmap_half_pitch(shots):
             shot_circle.set_alpha(.7)
             ax.add_patch(shot_circle)
         else:
-            shot_circle = plt.Circle((x, y), circle_size, edgecolor='gray')
-            shot_circle.set_alpha(.4)
+            shot_circle = plt.Circle((x, y), circle_size, color='mediumorchid')
+            shot_circle.set_alpha(.3)
             ax.add_patch(shot_circle)
 
     if len(season_shots) > 0:
@@ -157,11 +159,6 @@ def draw_shotmap_half_pitch(shots):
 def draw_heatmap_half_pitch(df):
     # Calculate the touch heatmap for the given player
     heatmap = calculate_action_heatmap(df)
-    # heatmap_f = gaussian_filter(heatmap, sigma=3)
-    # fig, ax = createPitch(pitch_width, pitch_height, 'yards', 'gray')
-    # plt.imshow(heatmap_f, cmap='magma', origin='lower')
-    # fig.patch.set_alpha(0)
-    # st.pyplot(fig)
     # Adjust the coordinates so they can be drawn on a half pitch(attacking)
     adj_heatmap = np.zeros((61, 81))
     for i in range(61):
@@ -319,7 +316,6 @@ def draw_simple_sonar(game, player):
     bool = (game['player_id'] == player) & (game['type_name'] == 'Pass')
     passes = game.loc[bool, ['pass_length', 'pass_angle', 'pass_end_location', 'location', 'player_name', 'pass_body_part_name', 'pass_outcome_id']]
     passes.reset_index(drop=True, inplace=True)
-    # passes = passes.loc[:10]
     for i, a_pass in passes.iterrows():
         angle = a_pass['pass_angle']
         x_end = a_pass['pass_end_location'][0] + (60 - a_pass['location'][0])
