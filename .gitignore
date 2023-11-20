@@ -2,3 +2,6 @@
 "**"
 **.vscode/
 "1_\360\237\217\240_Home.py"
+.venv/*
+*DS_Store
+
