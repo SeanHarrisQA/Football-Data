@@ -173,7 +173,7 @@ if 'df' in st.session_state:
 else:
     st.warning('Please return to the home page and select a match')
 
-selected_player = st.sidebar.radio("Select a team", (players))
+selected_player = st.sidebar.radio("Select a player", (players))
 
 st.title('Player analysis')
 # Start of page

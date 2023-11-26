@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import json
+from Reader import Reader
 from FCPython import createPitch
 import matplotlib.pyplot as plt
 from MyFCPython import createHalf, create_pitch_scaleable
@@ -19,75 +20,16 @@ from matplotlib.colors import ListedColormap
 use_local = True
 
 st.set_page_config(layout="wide")
-st.markdown("""
-        <style>
-               .block-container {
-                    padding-top: 1rem;
-                    padding-bottom: 0rem;
-                    padding-left: 5rem;
-                    padding-right: 5rem;
-                }
-        </style>
-        """, unsafe_allow_html=True)
-
-@st.cache_data
-def load_competitions(local):
-    if local:
-        all_competitions = pd.read_json(filepath + 'competitions.json')
-    else:
-        all_competitions = sb.competitions()
-    return all_competitions
-
-@st.cache_data
-def load_matches(local, season_id):
-    if local:
-        with open(filepath + '/matches/11/' + str(season_id) + '.json') as f:
-            all_matches = json.load(f)
-            all_matches = pd.json_normalize(all_matches, sep='_')
-    else:
-        all_matches = sb.matches(competition_id=11, season_id=season_id)
-    return all_matches
-
-@st.cache_data
-def load_event(local, match_id):
-    if local:
-        with open(filepath + '/events/' + str(match_id) + '.json') as f:
-            event = json.load(f)
-            event = pd.json_normalize(event, sep='_').assign(match_id=match_id)
-    else:
-        event = sb.events(match_id=match_id)
-    return event
-
-@st.cache_data
-def load_lineup(local, match_id):
-    if local:
-        with open(filepath + '/lineups/' + str(match_id) + '.json') as f:
-            game = json.load(f)
-            game = pd.json_normalize(game)
-    else:
-        game = sb.lineups(match_id=match_id)
-    return game
-
-@st.cache_data(show_spinner=False)
-def load_season_actions(local, matches):
-    progress_text = "Loading season actions. Please wait."
-    my_bar = st.progress(0, text=progress_text)
-    iteration_prcnt = 100 // len(all_matches)
-    progress = 0
-    season_actions = pd.DataFrame()
-    for i, match in all_matches.iterrows():
-        # Load match
-        event = load_event(local, match['match_id'])
-        # Take all the events that involved that player
-        bool = (event['player_id'] == player_id) | (event['pass_recipient_id'] == player_id)
-        actions = event[bool]
-        season_actions = pd.concat([season_actions, actions])
-        progress+=iteration_prcnt
-        my_bar.progress(progress, text=progress_text)
-    my_bar.progress(100, text='Data successfully loaded')
-    my_bar.empty()
-    season_actions.reset_index(drop=True, inplace=True)
-    return season_actions
+# st.markdown("""
+#         <style>
+#                .block-container {
+#                     padding-top: 1rem;
+#                     padding-bottom: 0rem;
+#                     padding-left: 5rem;
+#                     padding-right: 5rem;
+#                 }
+#         </style>
+#         """, unsafe_allow_html=True)
 
 def draw_shotmap(shots):
     fig, ax = createPitch(pitch_length, pitch_width, 'yards', 'gray')
@@ -219,10 +161,10 @@ def calculate_action_heatmap(df):
 def calculate_most_common_positions(games):
     all_positions = [0 for x in range(26)]
     for i, match in games.iterrows():
-        lineups = load_lineup(use_local, match['match_id'])
+        lineups = reader.load_lineup(match['match_id'])
         lineups = lineups[lineups['team_name'] == 'Barcelona']
 
-        event = load_event(use_local, match['match_id'])
+        event = reader.load_match_data(match['match_id'])
         event = event.iloc[len(event) - 1]
         final_min, final_sec = int(event['minute']), int(event['second'])
 
@@ -413,10 +355,13 @@ pitch_width = 80
 player_id = 5503
 # vv =20176, messi = 5503
 
+reader = Reader(filepath)
 # main script
-all_competitions = load_competitions(use_local)
+all_competitions = reader.load_competitions()
 
 la_liga = all_competitions[all_competitions['competition_id'] == 11].reset_index(drop=True)
+
+comp_id_la_liga = 11
 
 all_seasons = {}
 
@@ -425,9 +370,9 @@ for i, year in la_liga.iterrows():
 
 season = st.select_slider('Select a season', reversed(all_seasons.keys()))
 
-all_matches = load_matches(use_local, all_seasons[season])
+all_matches = reader.load_matches(comp_id_la_liga, all_seasons[season])
 
-season_actions = load_season_actions(use_local, all_matches)
+season_actions = reader.load_season_actions(all_matches, player_id)
 
 bool = (season_actions['player_id'] == player_id) & (season_actions['type_name'] == 'Shot') & (season_actions['shot_type_id'] != 88)
 season_shots = season_actions[bool]
@@ -492,9 +437,3 @@ with col4:
     draw_heatmap_half_pitch(season_actions)
     st.subheader('Percentage of minutes per position')
     calculate_most_common_positions(all_matches)
-
-
-
-# Season heatmap
-# st.dataframe(season_actions)
-# st.write(season_actions['type_name'].unique())

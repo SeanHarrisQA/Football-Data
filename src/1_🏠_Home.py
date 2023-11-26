@@ -1,12 +1,8 @@
 import streamlit as st
 from Reader import Reader
 
-
-
-'''
-Main script
-'''
 if __name__ == '__main__':
+    st.set_page_config(layout="centered")
     # Create reader object
     filepath = '/Users/seanharris/git/open-data/data/'
     reader = Reader(filepath)
@@ -28,7 +24,7 @@ if __name__ == '__main__':
         st.session_state.df = reader.load_match_data(match_id)
         st.session_state.home = home
         st.session_state.away = away
-        st.session_state.lineups = reader.load_lineup_data(match_id)
+        st.session_state.lineups = reader.load_teamsheets(match_id)
         st.session_state.scoreline = scoreline
 
     st.subheader(st.session_state.scoreline)
@@ -40,15 +36,25 @@ if __name__ == '__main__':
         for i, player in lineup_0.iterrows():
             if len(player['positions']) > 0:
                 initial = ''
-                for letter in player['player_name'].split(' '):
-                    initial += letter[0]
-                st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
+                if player['player_nickname']:
+                    for letter in player['player_nickname'].split(' '):
+                        initial += letter[0]
+                    st.caption(str(player['jersey_number']) + ' ' + player['player_nickname'] + ', ' + initial)
+                else:
+                    for letter in player['player_name'].split(' '):
+                        initial += letter[0]
+                    st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
 
     with col2:
         st.subheader('Away')
         for i, player in lineup_1.iterrows():
             if len(player['positions']) > 0:
                 initial = ''
-                for letter in player['player_name'].split(' '):
-                    initial += letter[0]
-                st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)
+                if player['player_nickname']:
+                    for letter in player['player_nickname'].split(' '):
+                        initial += letter[0]
+                    st.caption(str(player['jersey_number']) + ' ' + player['player_nickname'] + ', ' + initial)
+                else:
+                    for letter in player['player_name'].split(' '):
+                        initial += letter[0]
+                    st.caption(str(player['jersey_number']) + ' ' + player['player_name'] + ', ' + initial)

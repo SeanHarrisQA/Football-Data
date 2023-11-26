@@ -10,7 +10,7 @@ from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.feature_selection import SelectKBest, f_regression, mutual_info_regression
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 import streamlit as st
-from src.MyFCPython import createHalf, create_pitch_scaleable
+from MyFCPython import createHalf, create_pitch_scaleable
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -97,7 +97,7 @@ def goal_yes_no(outcome):
     
 ## Functions for loading data ######################################################################
 
-filepath = '../../Python Learning/open-data/data/'
+filepath = '/Users/seanharris/git/open-data/data/'
 
 def load_competition_data():
     all_competitions = pd.read_json(filepath + 'competitions.json')

@@ -91,7 +91,7 @@ def get_blocking_players_include_team(arr, location):
     
 ## Functions for loading data ######################################################################
 
-filepath = '../../Python Learning/open-data/data/'
+filepath = '/Users/seanharris/git/open-data/data/'
 
 def load_competition_data():
     all_competitions = pd.read_json(filepath + 'competitions.json')
